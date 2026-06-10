@@ -3,6 +3,7 @@
 import { ModeToggle } from "@/components/modeToggle";
 import SheetGrid from "@/components/sheet/sheetGrid";
 import { socket } from "@/lib/socket";
+import { awareness } from "@/yjs/ydoc";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 
@@ -14,8 +15,7 @@ if(!params.sheetId){
   return;
 }
 
-socket.emit("join-sheet",params.sheetId)
-
+socket.emit("join-sheet", {sheetId: params.sheetId,clientId: awareness.clientID,});
 
   return () => {
     socket.emit("leave-sheet", params.sheetId);

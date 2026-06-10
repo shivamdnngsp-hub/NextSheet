@@ -16,11 +16,25 @@ const io = new Server(server, {
   },
 });
 
+const socketClientMap = new Map<string, number>();
+const socketSheetMap = new Map<string, string>();
+
+
+
 io.on("connection", (socket) => {
   console.log("Connected:", socket.id);
 
-socket.on("join-sheet", (sheetId) => {
+
+
+   socket.on("disconnect", (reason) => {
+    console.log("Disconnected:", socket.id, reason);
+  });
+
+socket.on("join-sheet", ({ sheetId, clientId }) => {
   socket.join(sheetId);
+
+  socketClientMap.set(socket.id, clientId);
+  socketSheetMap.set(socket.id, sheetId);
 });
 
   socket.on("leave-sheet", (sheetId) => {
@@ -34,6 +48,19 @@ socket.on("yjs-update", ({ sheetId, update }) => {
 socket.on("awareness-update", (update, sheetId) => {
   socket.to(sheetId).emit("awareness-update",update );
 });
+
+socket.on("disconnect", () => {
+  const clientId = socketClientMap.get(socket.id);
+  const sheetId = socketSheetMap.get(socket.id);
+
+  if (clientId && sheetId) {
+    socket.to(sheetId).emit("awareness-client-disconnected",clientId );
+  }
+
+  socketClientMap.delete(socket.id);
+  socketSheetMap.delete(socket.id);
+});
+
 
 });
 

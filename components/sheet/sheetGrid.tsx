@@ -12,8 +12,9 @@ import { ydoc, ycells, awareness } from "@/yjs/ydoc";
 import { socket } from "@/lib/socket";
 import * as Y from "yjs";
 import useAuth from "@/hooks/useAuth";
-import { applyAwarenessUpdate, encodeAwarenessUpdate } from "y-protocols/awareness.js";
-import { presenceStore} from "@/lib/presenceStore";
+import { applyAwarenessUpdate, encodeAwarenessUpdate, removeAwarenessStates } from "y-protocols/awareness.js";
+import { clientCellMap } from "@/lib/presenceStore";
+import { getUserColor } from "@/lib/getColour";
 
 const SheetGrid = () => {
   const ROWS = 10;
@@ -157,11 +158,12 @@ const SheetGrid = () => {
     if (!user) return;
     awareness.setLocalStateField("user", {
       id: user.id,
+      color: getUserColor(user.id),
     });
   }, [user]);
 
 
-      const activeCell = useSelector((state: any) => state.selection.activeCell)
+  const activeCell = useSelector((state: any) => state.selection.activeCell)
 
   useEffect(() => {
 
@@ -178,62 +180,165 @@ const SheetGrid = () => {
 
 
 
+  useEffect(() => {
+
+    const handelAwarnessChange = ({ added, updated, removed }: any, origin: any) => {
 
 
-useEffect(()=>{
+      console.log("added", added);
+      console.log("updated", updated);
+      console.log("removed", removed);
+      console.log("states", [...awareness.getStates().entries()]);
 
-const  handelAwarnessChange = ({added,updated,removed}:any,origin:any) =>{
 
 
+      added.forEach((clientId: any) => {
+        if (clientId == awareness.clientID) return
+        const state = awareness.getStates().get(clientId)
 
-if(origin == "remote") return;
+        if (!state?.selection) return;
+        const cellId = `${state.selection.row}-${state.selection.col}`;
+        const color = state.user?.color
 
-  const changedClients = [
-      ...added,
-      ...updated,
-      ...removed,
-    ];
+        const ele = document.querySelector(`[data-cell-id="${cellId}"]`) as HTMLElement;
+        if (ele) {
+          ele.classList.add("border-2", "border-dashed")
+          ele.style.borderColor = color;
+        }
 
-      const update = encodeAwarenessUpdate( awareness,changedClients);
-       socket.emit("awareness-update",update,sheetId);
+        clientCellMap.set(clientId, cellId);
+
+      })
+
+
+      updated.forEach((clientId: any) => {
+
+        if (clientId == awareness.clientID) return
+        const state = awareness.getStates().get(clientId);
+
+        if (!state?.selection) return;
+
+        const newCellId = `${state.selection.row}-${state.selection.col}`;
+        const oldCellId = clientCellMap.get(clientId)
+        const color = state.user?.color
+
+      if (oldCellId) {
+  const ele = document.querySelector(`[data-cell-id="${oldCellId}"]` ) as HTMLElement;
+
+  ele?.classList.remove( "border-2", "border-dashed");
+  if (ele) {
+    ele.style.borderColor = "";
+  }
 }
 
-awareness.on("change",handelAwarnessChange)
- return () => {
-    awareness.off("change", handelAwarnessChange);
-  };
 
-
-},[socket,sheetId])
-
-
+        const ele = document.querySelector(`[data-cell-id="${newCellId}"]`) as HTMLElement;
+        if (ele) {
+          ele.classList.add("border-2", "border-dashed")
+          ele.style.borderColor = color;
+        }
 
 
 
+        console.log("old", oldCellId);
+        console.log("new", newCellId);
+
+        clientCellMap.set(clientId, newCellId);
+      });
 
 
-useEffect(() => {
 
-  socket.onAny((event) => {
-    console.log("CLIENT EVENT:", event);
-  });
+      removed.forEach((clientId: any) => {
+        if (clientId == awareness.clientID) return
+        const state = awareness.getStates().get(clientId);
+        const color = state?.user?.color
+        if (!state) {
 
-  const handelAwarness = (update: any) => {
+          const oldCellId = clientCellMap.get(clientId);
+          const ele = document.querySelector(`[data-cell-id="${oldCellId}"]`) as HTMLElement;
+          if (ele) {
+          ele.classList.remove( "border-2", "border-dashed");
+            ele.style.borderColor = "";
+          }
 
-    applyAwarenessUpdate(awareness,new Uint8Array(update),"remote");
-  };
+          clientCellMap.delete(clientId);
+        }
+      });
 
-  socket.on("awareness-update",handelAwarness
-  );
 
-  return () => {
-    socket.off(
-      "awareness-update",
-      handelAwarness
+      if (origin == "remote") return;
+
+      const changedClients = [
+        ...added,
+        ...updated,
+        ...removed,
+      ];
+
+      const update = encodeAwarenessUpdate(awareness, changedClients);
+      socket.emit("awareness-update", update, sheetId);
+    }
+
+    awareness.on("change", handelAwarnessChange)
+    return () => {
+      awareness.off("change", handelAwarnessChange);
+    };
+
+
+  }, [socket, sheetId])
+
+
+
+
+
+
+
+  useEffect(() => {
+
+
+    const handelAwarness = (update: any) => {
+
+      applyAwarenessUpdate(awareness, new Uint8Array(update), "remote");
+    };
+
+    socket.on("awareness-update", handelAwarness
     );
-  };
 
-}, [socket]);
+    return () => {
+      socket.off(
+        "awareness-update",
+        handelAwarness
+      );
+    };
+
+  }, [socket]);
+
+
+
+  useEffect(() => {
+    const handleClientDisconnect = (clientId: number) => {
+      removeAwarenessStates(awareness, [clientId], "remote");
+    };
+
+    socket.on("awareness-client-disconnected", handleClientDisconnect);
+
+    return () => {
+      socket.off(
+        "awareness-client-disconnected",
+        handleClientDisconnect
+      );
+    };
+  }, []);
+
+
+
+
+
+
+
+
+
+
+
 
 
 
