@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import api from "@/lib/axios";
 import { Spinner } from "../ui/spinner";
 import Cell from "./cell";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import SelectionOverlay from "../ui/SelectionOverlay";
 import { ydoc, ycells, awareness } from "@/yjs/ydoc";
 import { socket } from "@/lib/socket";
@@ -15,6 +15,7 @@ import useAuth from "@/hooks/useAuth";
 import { applyAwarenessUpdate, encodeAwarenessUpdate, removeAwarenessStates } from "y-protocols/awareness.js";
 import { clientCellMap } from "@/lib/presenceStore";
 import { getUserColor } from "@/lib/getColour";
+import { setPresentUsers } from "@/redux/slices/presenceSlice";
 
 const SheetGrid = () => {
   const ROWS = 10;
@@ -27,7 +28,7 @@ const SheetGrid = () => {
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const isHydrating = useRef(false);
   const { user } = useAuth();
-
+  const dispatch = useDispatch();
 
 
 
@@ -158,6 +159,7 @@ const SheetGrid = () => {
     if (!user) return;
     awareness.setLocalStateField("user", {
       id: user.id,
+      userName: user.userName,
       color: getUserColor(user.id),
     });
   }, [user]);
@@ -190,6 +192,22 @@ const SheetGrid = () => {
       console.log("removed", removed);
       console.log("states", [...awareness.getStates().entries()]);
 
+      type PresentUser = {
+        id: string;
+        userName: string;
+        color: string;
+      };
+
+
+      const user :PresentUser[] = []
+
+      awareness.getStates().forEach((state:any)=>{
+        if(state?.user){
+          user.push(state.user)
+        }
+      })
+
+      dispatch(setPresentUsers(user))
 
 
       added.forEach((clientId: any) => {
@@ -222,14 +240,14 @@ const SheetGrid = () => {
         const oldCellId = clientCellMap.get(clientId)
         const color = state.user?.color
 
-      if (oldCellId) {
-  const ele = document.querySelector(`[data-cell-id="${oldCellId}"]` ) as HTMLElement;
+        if (oldCellId) {
+          const ele = document.querySelector(`[data-cell-id="${oldCellId}"]`) as HTMLElement;
 
-  ele?.classList.remove( "border-2", "border-dashed");
-  if (ele) {
-    ele.style.borderColor = "";
-  }
-}
+          ele?.classList.remove("border-2", "border-dashed");
+          if (ele) {
+            ele.style.borderColor = "";
+          }
+        }
 
 
         const ele = document.querySelector(`[data-cell-id="${newCellId}"]`) as HTMLElement;
@@ -257,7 +275,7 @@ const SheetGrid = () => {
           const oldCellId = clientCellMap.get(clientId);
           const ele = document.querySelector(`[data-cell-id="${oldCellId}"]`) as HTMLElement;
           if (ele) {
-          ele.classList.remove( "border-2", "border-dashed");
+            ele.classList.remove("border-2", "border-dashed");
             ele.style.borderColor = "";
           }
 
@@ -331,16 +349,11 @@ const SheetGrid = () => {
 
 
 
+setInterval(() => {
+  const update = encodeAwarenessUpdate( awareness,[awareness.clientID]);
 
-
-
-
-
-
-
-
-
-
+  socket.emit("awareness-update", update, sheetId);
+}, 15000);
 
 
 

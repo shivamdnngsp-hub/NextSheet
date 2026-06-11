@@ -37,7 +37,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return (
 
         <>
-            <AuthContext.Provider value={{ user, setUser}}>
+            <AuthContext.Provider value={{ user, setUser,loading}}>
                 {children}
             </AuthContext.Provider>
         </>
