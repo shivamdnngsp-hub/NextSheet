@@ -35,32 +35,32 @@ const Cell = React.memo(({ value, row, col, handleChange, isSelectingRef, inputR
   const handleClick = () => {
     dispatch(setActiveCell(cellId));
   };
-const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-  e.currentTarget.setPointerCapture(e.pointerId);
-  isSelectingRef.current = true;
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    isSelectingRef.current = true;
 
-  dispatch(setSelectionStart(cellId));
-  dispatch(setSelectionEnd(cellId));
-};
-
-const handlePointerEnter = () => {
-  if (!isSelectingRef.current) return;
-  dispatch(setSelectionEnd(cellId));
-};
-const handlePointerMove = (e: React.PointerEvent) => {
-  if (!isSelectingRef.current) return;
-
-  const element = document.elementFromPoint(
-    e.clientX,
-    e.clientY
-  );
-
-  const cellId = element?.getAttribute("data-cell-id");
-
-  if (cellId) {
+    dispatch(setSelectionStart(cellId));
     dispatch(setSelectionEnd(cellId));
-  }
-};
+  };
+
+  const handlePointerEnter = () => {
+    if (!isSelectingRef.current) return;
+    dispatch(setSelectionEnd(cellId));
+  };
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isSelectingRef.current) return;
+
+    const element = document.elementFromPoint(
+      e.clientX,
+      e.clientY
+    );
+
+    const cellId = element?.getAttribute("data-cell-id");
+
+    if (cellId) {
+      dispatch(setSelectionEnd(cellId));
+    }
+  };
 
   const ROWS = 10;
   const COLS = 10;
@@ -68,6 +68,8 @@ const handlePointerMove = (e: React.PointerEvent) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     let newRow = row;
     let newCol = col;
+    const input = e.currentTarget as HTMLInputElement;
+  const valueLength = input.value.length;
 
     switch (e.key) {
       case "ArrowUp":
@@ -79,10 +81,16 @@ const handlePointerMove = (e: React.PointerEvent) => {
         break;
 
       case "ArrowLeft":
+        if(valueLength>0){
+          return;
+        }
         newCol = col === 0 ? COLS - 1 : col - 1;
         break;
 
       case "ArrowRight":
+        if(valueLength>0){
+          return;
+        }
         newCol = col === COLS - 1 ? 0 : col + 1;
         break;
 
@@ -102,9 +110,11 @@ const handlePointerMove = (e: React.PointerEvent) => {
 
 
 
+
+
   return (
     <Input
-     data-cell-id={cellId}
+      data-cell-id={cellId}
       ref={(el) => {
         inputRefs.current[cellId] = el;
       }}
@@ -112,10 +122,9 @@ const handlePointerMove = (e: React.PointerEvent) => {
       onChange={(e) => handleChange(row, col, e.target.value)}
       onClick={handleClick}
       onPointerDown={handlePointerDown}
-  onPointerEnter={handlePointerEnter}
-  onPointerMove={handlePointerMove}
-  onKeyDown={handleKeyDown}
-
+      onPointerEnter={handlePointerEnter}
+      onPointerMove={handlePointerMove}
+      onKeyDown={handleKeyDown}
       className={`
   h-12
   w-20

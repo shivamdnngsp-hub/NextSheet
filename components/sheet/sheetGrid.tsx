@@ -16,6 +16,7 @@ import { applyAwarenessUpdate, encodeAwarenessUpdate, removeAwarenessStates } fr
 import { clientCellMap } from "@/lib/presenceStore";
 import { getUserColor } from "@/lib/getColour";
 import { setPresentUsers } from "@/redux/slices/presenceSlice";
+import { number } from "zod";
 
 
 const SheetGrid = () => {
@@ -30,34 +31,173 @@ const SheetGrid = () => {
   const isHydrating = useRef(false);
   const { user } = useAuth();
   const dispatch = useDispatch();
-
+  const activeCell = useSelector((state: any) => state.selection.activeCell)
+  const { selectionStart, selectionEnd } = useSelector((state: any) => state.selection);
   const undoManagerRef = useRef<Y.UndoManager | null>(null);
+
+
+
+  const handleCopy = async () => {
+
+    const [startRow, startCol] = selectionStart.split("-").map(Number);
+    const [endRow, endCol] = selectionEnd.split("-").map(Number)
+
+    const minRow = Math.min(startRow, endRow);
+    const maxRow = Math.max(startRow, endRow);
+
+    const minCol = Math.min(startCol, endCol);
+    const maxCol = Math.max(startCol, endCol);
+
+    let result = "";
+    for (let r = minRow; r <= maxRow; r++) {
+      const rowValues = [];
+      for (let c = minCol; c <= maxCol; c++) {
+        const cellId = `${r}-${c}`;
+        rowValues.push(cells[cellId] || "")
+      }
+      const rowText = rowValues.join("\t");
+      result += rowText;
+      if (r < maxRow) {
+        result += "\n";
+      }
+    }
+
+    await navigator.clipboard.writeText(result)
+  }
+
+  const handlePaste = async () => {
+    const value = await navigator.clipboard.readText();
+    const rows = value.split(/\r?\n/);
+
+    const [baseRow, baseCol] = activeCell.split("-").map(Number);
+
+    rows.forEach((rowText, rowIndex) => {
+      const cols = rowText.split("\t");
+      cols.forEach((text, colIndex) => {
+        const targetRow = baseRow + rowIndex;
+        const targetCol = baseCol + colIndex;
+
+        ycells.set(`${targetRow}-${targetCol}`, text);
+      });
+    });
+  }
+
+  const handleCut = async () => {
+    const [startRow, startCol] = selectionStart.split("-").map(Number);
+    const [endRow, endCol] = selectionEnd.split("-").map(Number)
+
+    const minRow = Math.min(startRow, endRow);
+    const maxRow = Math.max(startRow, endRow);
+
+    const minCol = Math.min(startCol, endCol);
+    const maxCol = Math.max(startCol, endCol);
+
+    let result = "";
+    for (let r = minRow; r <= maxRow; r++) {
+      const rowValues = [];
+      for (let c = minCol; c <= maxCol; c++) {
+        const cellId = `${r}-${c}`;
+        rowValues.push(cells[cellId] || "")
+      }
+      const rowText = rowValues.join("\t");
+      result += rowText;
+      if (r < maxRow) {
+        result += "\n";
+      }
+    }
+
+    await navigator.clipboard.writeText(result)
+
+    for (let r = minRow; r <= maxRow; r++) {
+      for (let c = minCol; c <= maxCol; c++) {
+        const cellId = `${r}-${c}`;
+
+        ycells.set(cellId, "");
+      }
+    }
+
+  }
+
+
+  useEffect(() => {
+
+    const handleKeyDown = (e: any) => {
+      if (e.ctrlKey && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        handleCopy()
+      }
+
+      if (e.ctrlKey && e.key.toLowerCase() === "v") {
+        e.preventDefault();
+        handlePaste()
+      }
+
+      if (e.ctrlKey && e.key.toLowerCase() === "x") {
+        e.preventDefault();
+        handleCut()
+      }
+
+
+
+
+
+
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => window.removeEventListener("keydown", handleKeyDown)
+
+
+  }, [activeCell, cells, selectionStart, selectionEnd])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   useEffect(() => {
     undoManagerRef.current = new Y.UndoManager(ycells);
   }, []);
 
 
-useEffect(() => {
-  const handleKeyDown = (e:any) => {
+  useEffect(() => {
+    const handleKeyDown = (e: any) => {
 
-    if (e.ctrlKey && e.key === "z") {
-      e.preventDefault();
-      undoManagerRef.current?.undo();
-    }
+      if (e.ctrlKey && e.key === "z") {
+        e.preventDefault();
+        undoManagerRef.current?.undo();
+      }
 
-    if (e.ctrlKey && e.key === "y") {
-      e.preventDefault();
-      undoManagerRef.current?.redo();
-    }
-  };
+      if (e.ctrlKey && e.key === "y") {
+        e.preventDefault();
+        undoManagerRef.current?.redo();
+      }
+    };
 
-  window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
 
-  return () => {
-    window.removeEventListener("keydown", handleKeyDown);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+
 
 
 
@@ -79,9 +219,11 @@ useEffect(() => {
 
 
   useEffect(() => {
+     if (!user) return;
     const fetchSheet = async () => {
       try {
         setLoading(true)
+        console.log(sheetId)
         const res = await api.post(`/sheets/loadSheet`, { sheetId });
         isHydrating.current = true;
 
@@ -94,8 +236,9 @@ useEffect(() => {
 
         setCells(Object.fromEntries(ycells.entries()));
 
-      } catch (error) {
-        console.log("error in fetching sheet")
+      } catch (error: any) {
+        console.log(error.response?.data);
+        console.log(error);
       } finally {
         setLoading(false);
         isHydrating.current = false;
@@ -211,7 +354,7 @@ useEffect(() => {
   }, [user]);
 
 
-  const activeCell = useSelector((state: any) => state.selection.activeCell)
+
 
   useEffect(() => {
 
@@ -245,10 +388,10 @@ useEffect(() => {
       };
 
 
-      const user :PresentUser[] = []
+      const user: PresentUser[] = []
 
-      awareness.getStates().forEach((state:any)=>{
-        if(state?.user){
+      awareness.getStates().forEach((state: any) => {
+        if (state?.user) {
           user.push(state.user)
         }
       })
@@ -394,24 +537,33 @@ useEffect(() => {
   }, []);
 
 
-useEffect(() => {
-  
-  const update = encodeAwarenessUpdate(
-    awareness,
-    [awareness.clientID]
-  );
+  useEffect(() => {
 
-  socket.emit("awareness-update", update, sheetId);
-
-  
-  const interval = setInterval(() => {
-    const update = encodeAwarenessUpdate( awareness, [awareness.clientID]);
+    const update = encodeAwarenessUpdate(
+      awareness,
+      [awareness.clientID]
+    );
 
     socket.emit("awareness-update", update, sheetId);
-  }, 15000);
 
-  return () => clearInterval(interval);
-}, []);
+
+    const interval = setInterval(() => {
+      const update = encodeAwarenessUpdate(awareness, [awareness.clientID]);
+
+      socket.emit("awareness-update", update, sheetId);
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+
+
+
+
+
+
+
+
 
 
 
