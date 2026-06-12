@@ -17,6 +17,7 @@ import { clientCellMap } from "@/lib/presenceStore";
 import { getUserColor } from "@/lib/getColour";
 import { setPresentUsers } from "@/redux/slices/presenceSlice";
 
+
 const SheetGrid = () => {
   const ROWS = 10;
   const COLS = 10;
@@ -29,6 +30,51 @@ const SheetGrid = () => {
   const isHydrating = useRef(false);
   const { user } = useAuth();
   const dispatch = useDispatch();
+
+  const undoManagerRef = useRef<Y.UndoManager | null>(null);
+
+  useEffect(() => {
+    undoManagerRef.current = new Y.UndoManager(ycells);
+  }, []);
+
+
+useEffect(() => {
+  const handleKeyDown = (e:any) => {
+
+    if (e.ctrlKey && e.key === "z") {
+      e.preventDefault();
+      undoManagerRef.current?.undo();
+    }
+
+    if (e.ctrlKey && e.key === "y") {
+      e.preventDefault();
+      undoManagerRef.current?.redo();
+    }
+  };
+
+  window.addEventListener("keydown", handleKeyDown);
+
+  return () => {
+    window.removeEventListener("keydown", handleKeyDown);
+  };
+}, []);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -348,14 +394,24 @@ const SheetGrid = () => {
   }, []);
 
 
-
-setInterval(() => {
-  const update = encodeAwarenessUpdate( awareness,[awareness.clientID]);
+useEffect(() => {
+  
+  const update = encodeAwarenessUpdate(
+    awareness,
+    [awareness.clientID]
+  );
 
   socket.emit("awareness-update", update, sheetId);
-}, 15000);
 
+  
+  const interval = setInterval(() => {
+    const update = encodeAwarenessUpdate( awareness, [awareness.clientID]);
 
+    socket.emit("awareness-update", update, sheetId);
+  }, 15000);
+
+  return () => clearInterval(interval);
+}, []);
 
 
 
