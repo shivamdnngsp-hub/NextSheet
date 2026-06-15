@@ -6,7 +6,8 @@ import { Spinner } from "@/components/ui/spinner";
 import useAuth from "@/hooks/useAuth";
 import { socket } from "@/lib/socket";
 import { clearSelection } from "@/redux/slices/selectionSlice";
-import { awareness } from "@/yjs/ydoc";
+import getYSheet from "@/yjs/ydoc";
+
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -16,7 +17,10 @@ const Sheet = () => {
   const dispatch = useDispatch()
   const presentUser = useSelector((state: any) => state.presence.presentUser)
   const {user,loading} = useAuth();
+  const sheetId = params.sheetId as string
+  const {awareness} = getYSheet(sheetId)
  const presentUserExcludingMe = presentUser
+
   .filter((present:any) =>present?.id?.toString() !== user?.id?.toString())
   .filter((present: any, index: number, arr: any[]) =>index === arr.findIndex((p) => p.id === present.id));
  
@@ -54,7 +58,7 @@ console.log("here",presentUser)
 },[presentUser])
 
 
-if(loading){
+if(loading || !user){
   return (
     <Spinner></Spinner>
   )

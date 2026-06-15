@@ -1,14 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Input } from "../ui/input";
 import { useParams } from "next/navigation";
 import api from "@/lib/axios";
 import { Spinner } from "../ui/spinner";
 import Cell from "./cell";
 import { useDispatch, useSelector } from "react-redux";
 import SelectionOverlay from "../ui/SelectionOverlay";
-import { ydoc, ycells, awareness } from "@/yjs/ydoc";
+
 import { socket } from "@/lib/socket";
 import * as Y from "yjs";
 import useAuth from "@/hooks/useAuth";
@@ -16,7 +15,7 @@ import { applyAwarenessUpdate, encodeAwarenessUpdate, removeAwarenessStates } fr
 import { clientCellMap } from "@/lib/presenceStore";
 import { getUserColor } from "@/lib/getColour";
 import { setPresentUsers } from "@/redux/slices/presenceSlice";
-import { number } from "zod";
+import getYSheet from "@/yjs/ydoc";
 
 
 const SheetGrid = () => {
@@ -25,7 +24,7 @@ const SheetGrid = () => {
 
   const [cells, setCells] = useState<Record<string, string>>({});
   const params = useParams()
-  const sheetId = params.sheetId
+  const sheetId = params.sheetId as string
   const [loading, setLoading] = useState(true);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const isHydrating = useRef(false);
@@ -34,6 +33,9 @@ const SheetGrid = () => {
   const activeCell = useSelector((state: any) => state.selection.activeCell)
   const { selectionStart, selectionEnd } = useSelector((state: any) => state.selection);
   const undoManagerRef = useRef<Y.UndoManager | null>(null);
+  const { ydoc, ycells, awareness } = getYSheet(sheetId)
+  const [loadError, setLoadError] = useState("");
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
 
 
@@ -219,26 +221,37 @@ const SheetGrid = () => {
 
 
   useEffect(() => {
-     if (!user) return;
+    if (!user) return;
     const fetchSheet = async () => {
       try {
         setLoading(true)
         console.log(sheetId)
         const res = await api.post(`/sheets/loadSheet`, { sheetId });
+        console.log(res.data)
+          setIsAuthorized(true);
         isHydrating.current = true;
 
         const binary = res.data.sheet.yjsState?.data;
+        console.log("sheet", sheetId);
+        console.log("binary length", binary?.length);
+        console.log("before hydrate", ycells.size);
 
         if (binary?.length) {
-          Y.applyUpdate(ydoc, new Uint8Array(binary), "load");
+          Y.applyUpdate(ydoc, new Uint8Array(binary), "remote");
         }
+
+        console.log("after hydrate", ycells.size);
 
 
         setCells(Object.fromEntries(ycells.entries()));
 
       } catch (error: any) {
-        console.log(error.response?.data);
-        console.log(error);
+        if (error.response?.status === 404) {
+          setLoadError("You are not authorized to access this sheet.");
+        } else {
+          setLoadError("Failed to load sheet.");
+        }
+          setIsAuthorized(false);
       } finally {
         setLoading(false);
         isHydrating.current = false;
@@ -252,8 +265,16 @@ const SheetGrid = () => {
 
   useEffect(() => {
     if (loading) return;
+    if(!isAuthorized) return;
+
     const timer = setTimeout(async () => {
       const update = Y.encodeStateAsUpdate(ydoc);
+
+      console.log(
+        "saving size",
+        ycells.size,
+        Array.from(Y.encodeStateAsUpdate(ydoc))
+      );
 
       await api.post(`/sheets/saveSheet`, { update: Array.from(update), sheetId })
     }, 1000)
@@ -274,6 +295,7 @@ const SheetGrid = () => {
   );
 
   useEffect(() => {
+    if(!isAuthorized) return;
     if (isHydrating.current) return
 
     const handler = () => {
@@ -291,6 +313,7 @@ const SheetGrid = () => {
 
 
   useEffect(() => {
+    if(!isAuthorized) return;
     if (!sheetId) return;
 
     const handleSocketUpdate = (update: ArrayBuffer) => {
@@ -331,6 +354,7 @@ const SheetGrid = () => {
   const isSelectingRef = useRef(false);
 
   useEffect(() => {
+  
     const handleMouseUp = () => {
       isSelectingRef.current = false;
     };
@@ -345,6 +369,7 @@ const SheetGrid = () => {
 
 
   useEffect(() => {
+    if(!isAuthorized) return;
     if (!user) return;
     awareness.setLocalStateField("user", {
       id: user.id,
@@ -372,7 +397,7 @@ const SheetGrid = () => {
 
 
   useEffect(() => {
-
+if(!isAuthorized) return;
     const handelAwarnessChange = ({ added, updated, removed }: any, origin: any) => {
 
 
@@ -501,7 +526,7 @@ const SheetGrid = () => {
 
   useEffect(() => {
 
-
+if(!isAuthorized) return;
     const handelAwarness = (update: any) => {
 
       applyAwarenessUpdate(awareness, new Uint8Array(update), "remote");
@@ -522,6 +547,7 @@ const SheetGrid = () => {
 
 
   useEffect(() => {
+    if(!isAuthorized) return;
     const handleClientDisconnect = (clientId: number) => {
       removeAwarenessStates(awareness, [clientId], "remote");
     };
@@ -538,7 +564,7 @@ const SheetGrid = () => {
 
 
   useEffect(() => {
-
+if(!isAuthorized) return;
     const update = encodeAwarenessUpdate(
       awareness,
       [awareness.clientID]
@@ -560,16 +586,27 @@ const SheetGrid = () => {
 
 
 
-
-
-
-
-
-
-
   if (loading) {
     return <Spinner></Spinner>;
   }
+
+
+if (loadError) {
+  return (
+    <div className="flex items-center justify-center h-[70vh]">
+      <div className="text-center">
+        <h2 className="text-xl font-semibold">
+          Access Denied
+        </h2>
+
+        <p className="text-muted-foreground mt-2">
+          {loadError}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 
 
 
