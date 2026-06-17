@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   activeCell: null,
+  editingCell: null,
   selectionStart: null,
   selectionEnd: null,
 };
@@ -13,7 +14,10 @@ const selectionSlice = createSlice({
     setSelectionStart(state, action) {
       state.selectionStart = action.payload;
     },
-
+   
+    setEditingCell(state,action){
+      state.editingCell = action.payload;
+    },
     setSelectionEnd(state, action) {
       state.selectionEnd = action.payload;
     },
@@ -29,6 +33,6 @@ const selectionSlice = createSlice({
   },
 });
 
-export const { setSelectionStart, setSelectionEnd, setActiveCell, clearSelection } = selectionSlice.actions;
+export const { setSelectionStart, setSelectionEnd, setActiveCell, clearSelection,setEditingCell } = selectionSlice.actions;
 
 export default selectionSlice.reducer;
