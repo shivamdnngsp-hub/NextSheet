@@ -16,6 +16,7 @@ import { clientCellMap } from "@/lib/presenceStore";
 import { getUserColor } from "@/lib/getColour";
 import { setPresentUsers } from "@/redux/slices/presenceSlice";
 import getYSheet from "@/yjs/ydoc";
+import { setEditingCell } from "@/redux/slices/selectionSlice";
 
 
 const SheetGrid = () => {
@@ -36,6 +37,7 @@ const SheetGrid = () => {
   const { ydoc, ycells, awareness } = getYSheet(sheetId)
   const [loadError, setLoadError] = useState("");
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+
 
 
 
@@ -200,26 +202,6 @@ const SheetGrid = () => {
   }, []);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   useEffect(() => {
     if (!user) return;
     const fetchSheet = async () => {
@@ -300,7 +282,7 @@ const SheetGrid = () => {
 
     const handler = () => {
       const obj = Object.fromEntries(ycells.entries()) as Record<string, string>;
-
+      
       setCells(obj);
 
     };
@@ -308,7 +290,7 @@ const SheetGrid = () => {
     ycells.observe(handler);
     return () => ycells.unobserve(handler);
 
-  }, [])
+  },  [isAuthorized])
 
 
 
@@ -583,6 +565,47 @@ if(!isAuthorized) return;
   }, []);
 
 
+
+useEffect(()=>{
+  const handleKeyDown = (e:KeyboardEvent)=>{
+   if(!activeCell) return;
+   if(e.key === "Enter"){
+    e.preventDefault();
+    dispatch(setEditingCell(activeCell));
+   }
+  }
+    window.addEventListener("keydown", handleKeyDown)
+    
+    return ()=> {window.removeEventListener("keydown",handleKeyDown)}
+
+},[activeCell])
+
+
+
+const editingCell = useSelector(
+  (state: any) => state.selection.editingCell
+);
+
+useEffect(()=>{
+
+  const handleKeyDown = (e:KeyboardEvent)=>{
+   if (editingCell) return;
+   if(!activeCell) return;
+   const isCharacter = e.key.length === 1 && !e.ctrlKey && !e.metaKey
+   e.preventDefault()
+   
+   if(!isCharacter) return;
+   const [row,col] = activeCell.split("-").map(Number);
+   handleChange(row,col,e.key)
+  
+   dispatch(setEditingCell(activeCell))
+  }
+
+window.addEventListener("keydown",handleKeyDown)
+return ()=> {window.removeEventListener("keydown",handleKeyDown)}
+
+
+},[activeCell, editingCell])
 
 
 

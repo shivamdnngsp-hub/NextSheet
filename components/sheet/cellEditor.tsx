@@ -1,7 +1,8 @@
-import React from "react";
+"use client"
+import React, { useEffect } from "react";
 import { Input } from "../ui/input";
 import { useDispatch, useSelector } from "react-redux";
-import { setActiveCell} from "@/redux/slices/selectionSlice";
+import { setActiveCell, setEditingCell } from "@/redux/slices/selectionSlice";
 
 
 type CellProps = {
@@ -14,10 +15,9 @@ type CellProps = {
     value: string
   ) => void;
   inputRefs: React.RefObject<Record<string, HTMLInputElement | null>>;
-
 };
 
-const CellEditor = React.memo(({ value, row, col, handleChange,  inputRefs }: CellProps) => {
+const CellEditor = React.memo(({ value, row, col, handleChange, inputRefs }: CellProps) => {
 
   console.log("cell rendered", row, col);
 
@@ -27,7 +27,7 @@ const CellEditor = React.memo(({ value, row, col, handleChange,  inputRefs }: Ce
 
   const cellId = `${row}-${col}`;
 
- 
+
   const handleClick = () => {
     dispatch(setActiveCell(cellId));
   };
@@ -65,6 +65,18 @@ const CellEditor = React.memo(({ value, row, col, handleChange,  inputRefs }: Ce
         newCol = col === COLS - 1 ? 0 : col + 1;
         break;
 
+      case "Escape":
+        e.preventDefault();
+        e.stopPropagation();
+        dispatch(setEditingCell(null));
+        return;
+
+      case "Enter":
+        e.preventDefault();
+        e.stopPropagation();
+        dispatch(setEditingCell(null));
+        return;
+
       default:
         return;
     }
@@ -74,14 +86,17 @@ const CellEditor = React.memo(({ value, row, col, handleChange,  inputRefs }: Ce
     const newCellId = `${newRow}-${newCol}`;
 
     dispatch(setActiveCell(newCellId));
-   
+
     inputRefs.current[newCellId]?.focus();
   };
 
+  const stopEditing = () => {
+    dispatch(setEditingCell(null));
+  }
 
 
 
-
+  console.log("ineditor")
   return (
     <Input
       data-cell-id={cellId}
@@ -89,9 +104,17 @@ const CellEditor = React.memo(({ value, row, col, handleChange,  inputRefs }: Ce
         inputRefs.current[cellId] = el;
       }}
       value={value}
-      onChange={(e) => handleChange(row, col, e.target.value)}
+      onChange={(e) => {
+        console.log("change", e.target.value);
+        handleChange(row, col, e.target.value);
+      }}
       onClick={handleClick}
-      onKeyDown={handleKeyDown}
+      autoFocus
+      onBlur={stopEditing}
+      onKeyDown={(e) => {
+        console.log("key", e.key);
+        handleKeyDown(e);
+      }}
       className={`
   h-12
   w-20
@@ -99,6 +122,7 @@ const CellEditor = React.memo(({ value, row, col, handleChange,  inputRefs }: Ce
   rounded-none
   
 `}
+
     />
   );
 }
