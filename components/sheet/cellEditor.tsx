@@ -36,59 +36,6 @@ const CellEditor = React.memo(({ value, row, col, handleChange, inputRefs }: Cel
   const ROWS = 10;
   const COLS = 10;
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    let newRow = row;
-    let newCol = col;
-    const input = e.currentTarget as HTMLInputElement;
-    const valueLength = input.value.length;
-
-    switch (e.key) {
-      case "ArrowUp":
-        newRow = row === 0 ? ROWS - 1 : row - 1;
-        break;
-
-      case "ArrowDown":
-        newRow = row === ROWS - 1 ? 0 : row + 1;
-        break;
-
-      case "ArrowLeft":
-        if (valueLength > 0) {
-          return;
-        }
-        newCol = col === 0 ? COLS - 1 : col - 1;
-        break;
-
-      case "ArrowRight":
-        if (valueLength > 0) {
-          return;
-        }
-        newCol = col === COLS - 1 ? 0 : col + 1;
-        break;
-
-      case "Escape":
-        e.preventDefault();
-        e.stopPropagation();
-        dispatch(setEditingCell(null));
-        return;
-
-      case "Enter":
-        e.preventDefault();
-        e.stopPropagation();
-        dispatch(setEditingCell(null));
-        return;
-
-      default:
-        return;
-    }
-
-    e.preventDefault();
-
-    const newCellId = `${newRow}-${newCol}`;
-
-    dispatch(setActiveCell(newCellId));
-
-    inputRefs.current[newCellId]?.focus();
-  };
 
   const stopEditing = () => {
     dispatch(setEditingCell(null));
@@ -111,10 +58,7 @@ const CellEditor = React.memo(({ value, row, col, handleChange, inputRefs }: Cel
       onClick={handleClick}
       autoFocus
       onBlur={stopEditing}
-      onKeyDown={(e) => {
-        console.log("key", e.key);
-        handleKeyDown(e);
-      }}
+      // onKeyDown={handleKeyDown}
       className={`
   h-12
   w-20

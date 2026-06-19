@@ -16,7 +16,7 @@ import { clientCellMap } from "@/lib/presenceStore";
 import { getUserColor } from "@/lib/getColour";
 import { setPresentUsers } from "@/redux/slices/presenceSlice";
 import getYSheet from "@/yjs/ydoc";
-import { setEditingCell } from "@/redux/slices/selectionSlice";
+import { setActiveCell, setEditingCell, setSelectionEnd, setSelectionStart } from "@/redux/slices/selectionSlice";
 
 
 const SheetGrid = () => {
@@ -566,46 +566,95 @@ if(!isAuthorized) return;
 
 
 
-useEffect(()=>{
-  const handleKeyDown = (e:KeyboardEvent)=>{
-   if(!activeCell) return;
-   if(e.key === "Enter"){
-    e.preventDefault();
-    dispatch(setEditingCell(activeCell));
-   }
-  }
-    window.addEventListener("keydown", handleKeyDown)
-    
-    return ()=> {window.removeEventListener("keydown",handleKeyDown)}
-
-},[activeCell])
-
 
 
 const editingCell = useSelector(
   (state: any) => state.selection.editingCell
-);
+);useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (!activeCell) return;
 
-useEffect(()=>{
+    if (editingCell) {
+      switch (e.key) {
+        case "Escape":
+          e.preventDefault();
+          dispatch(setEditingCell(null));
+          return;
 
-  const handleKeyDown = (e:KeyboardEvent)=>{
-   if (editingCell) return;
-   if(!activeCell) return;
-   const isCharacter = e.key.length === 1 && !e.ctrlKey && !e.metaKey
-   e.preventDefault()
-   
-   if(!isCharacter) return;
-   const [row,col] = activeCell.split("-").map(Number);
-   handleChange(row,col,e.key)
-  
-   dispatch(setEditingCell(activeCell))
-  }
+        case "Enter":
+          e.preventDefault();
+          dispatch(setEditingCell(null));
+          return;
 
-window.addEventListener("keydown",handleKeyDown)
-return ()=> {window.removeEventListener("keydown",handleKeyDown)}
+        default:
+          return;
+      }
+    }
+
+    const [row, col] = activeCell.split("-").map(Number);
+
+    let newRow = row;
+    let newCol = col;
 
 
-},[activeCell, editingCell])
+    switch (e.key) {
+      case "ArrowUp":
+        e.preventDefault();
+        newRow = row === 0 ? ROWS - 1 : row - 1;
+        break;
+
+      case "ArrowDown":
+        e.preventDefault();
+        newRow = row === ROWS - 1 ? 0 : row + 1;
+        break;
+
+      case "ArrowLeft":
+        e.preventDefault();
+        newCol = col === 0 ? COLS - 1 : col - 1;
+        break;
+
+      case "ArrowRight":
+        e.preventDefault();
+        newCol = col === COLS - 1 ? 0 : col + 1;
+        break;
+
+      case "Enter":
+        e.preventDefault();
+        dispatch(setEditingCell(activeCell));
+        return;
+
+      default: {
+        const isCharacter =
+          e.key.length === 1 &&
+          !e.ctrlKey &&
+          !e.metaKey &&
+          !e.altKey;
+
+        if (!isCharacter) return;
+
+        e.preventDefault();
+
+        handleChange(row, col, e.key);
+
+        dispatch(setEditingCell(activeCell));
+        return;
+      }
+    }
+
+    const newCellId = `${newRow}-${newCol}`;
+
+    dispatch(setActiveCell(newCellId));
+    dispatch(setSelectionStart(newCellId));
+    dispatch(setSelectionEnd(newCellId));
+  };
+
+  window.addEventListener("keydown", handleKeyDown);
+
+  return () => {
+    window.removeEventListener("keydown", handleKeyDown);
+  };
+}, [activeCell, editingCell, dispatch]);
+
 
 
 

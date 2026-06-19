@@ -9,6 +9,8 @@ type CellViewProps = {
   isSelectingRef: React.RefObject<boolean>;
 };
 
+
+
 const CellView = React.memo(({ value, row, col, isSelectingRef }: CellViewProps) => {
   const dispatch = useDispatch();
 
@@ -24,7 +26,6 @@ const CellView = React.memo(({ value, row, col, isSelectingRef }: CellViewProps)
     dispatch(setActiveCell(cellId));
     dispatch(setEditingCell(cellId));
   };
-
 
 
   const handlePointerDown = (
@@ -59,9 +60,7 @@ const CellView = React.memo(({ value, row, col, isSelectingRef }: CellViewProps)
     }
   };
 
-
-
-
+  
   console.log("inCellView")
 
   return (
