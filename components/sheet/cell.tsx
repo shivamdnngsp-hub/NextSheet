@@ -7,6 +7,7 @@ import CellView from "./cellView";
 
 type CellProps = {
   value: string;
+  displayValue:string
   row: number;
   col: number;
   handleChange: (
@@ -20,7 +21,7 @@ type CellProps = {
 
 };
 
-const Cell = React.memo(({ value, row, col, handleChange, isSelectingRef, inputRefs}: CellProps) => {
+const Cell = React.memo(({ value, row, col, handleChange, isSelectingRef, inputRefs,displayValue}: CellProps) => {
 
   console.log("cell rendered", row, col);
 
@@ -44,7 +45,7 @@ if(isEditing){
 
 return(
   <CellView
- value = {value}
+ value = {displayValue}
   row = {row}
   col = {col}
   isSelectingRef={isSelectingRef}

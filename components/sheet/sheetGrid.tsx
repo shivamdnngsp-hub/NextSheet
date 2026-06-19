@@ -17,6 +17,8 @@ import { getUserColor } from "@/lib/getColour";
 import { setPresentUsers } from "@/redux/slices/presenceSlice";
 import getYSheet from "@/yjs/ydoc";
 import { setActiveCell, setEditingCell, setSelectionEnd, setSelectionStart } from "@/redux/slices/selectionSlice";
+import { evaluateFormula, getCellValue, getReferences, isFormula } from "@/lib/formula/formulaEngine";
+import { dependencyGraph } from "@/lib/formula/dependencyGraph";
 
 
 const SheetGrid = () => {
@@ -210,7 +212,7 @@ const SheetGrid = () => {
         console.log(sheetId)
         const res = await api.post(`/sheets/loadSheet`, { sheetId });
         console.log(res.data)
-          setIsAuthorized(true);
+        setIsAuthorized(true);
         isHydrating.current = true;
 
         const binary = res.data.sheet.yjsState?.data;
@@ -233,7 +235,7 @@ const SheetGrid = () => {
         } else {
           setLoadError("Failed to load sheet.");
         }
-          setIsAuthorized(false);
+        setIsAuthorized(false);
       } finally {
         setLoading(false);
         isHydrating.current = false;
@@ -247,7 +249,7 @@ const SheetGrid = () => {
 
   useEffect(() => {
     if (loading) return;
-    if(!isAuthorized) return;
+    if (!isAuthorized) return;
 
     const timer = setTimeout(async () => {
       const update = Y.encodeStateAsUpdate(ydoc);
@@ -271,18 +273,39 @@ const SheetGrid = () => {
   const handleChange = useCallback((row: number, col: number, value: string) => {
     const cellId = `${row}-${col}`;
 
+    if (isFormula(value)) {
+      const refs = getReferences(value)
+      for (const ref of refs) {
+        const currentCell = `${String.fromCharCode(65 + col)}${row + 1}`;
+
+
+        if (!dependencyGraph.has(ref)) {
+          dependencyGraph.set(ref, new Set())
+        }
+
+        dependencyGraph.get(ref)?.add(currentCell)
+      }
+      console.log(dependencyGraph)
+
+    }
+
     ycells.set(cellId, value)
   },
     []
   );
+ 
+
+
+
+
 
   useEffect(() => {
-    if(!isAuthorized) return;
+    if (!isAuthorized) return;
     if (isHydrating.current) return
 
     const handler = () => {
       const obj = Object.fromEntries(ycells.entries()) as Record<string, string>;
-      
+
       setCells(obj);
 
     };
@@ -290,12 +313,12 @@ const SheetGrid = () => {
     ycells.observe(handler);
     return () => ycells.unobserve(handler);
 
-  },  [isAuthorized])
+  }, [isAuthorized])
 
 
 
   useEffect(() => {
-    if(!isAuthorized) return;
+    if (!isAuthorized) return;
     if (!sheetId) return;
 
     const handleSocketUpdate = (update: ArrayBuffer) => {
@@ -336,7 +359,7 @@ const SheetGrid = () => {
   const isSelectingRef = useRef(false);
 
   useEffect(() => {
-  
+
     const handleMouseUp = () => {
       isSelectingRef.current = false;
     };
@@ -351,7 +374,7 @@ const SheetGrid = () => {
 
 
   useEffect(() => {
-    if(!isAuthorized) return;
+    if (!isAuthorized) return;
     if (!user) return;
     awareness.setLocalStateField("user", {
       id: user.id,
@@ -379,7 +402,7 @@ const SheetGrid = () => {
 
 
   useEffect(() => {
-if(!isAuthorized) return;
+    if (!isAuthorized) return;
     const handelAwarnessChange = ({ added, updated, removed }: any, origin: any) => {
 
 
@@ -508,7 +531,7 @@ if(!isAuthorized) return;
 
   useEffect(() => {
 
-if(!isAuthorized) return;
+    if (!isAuthorized) return;
     const handelAwarness = (update: any) => {
 
       applyAwarenessUpdate(awareness, new Uint8Array(update), "remote");
@@ -529,7 +552,7 @@ if(!isAuthorized) return;
 
 
   useEffect(() => {
-    if(!isAuthorized) return;
+    if (!isAuthorized) return;
     const handleClientDisconnect = (clientId: number) => {
       removeAwarenessStates(awareness, [clientId], "remote");
     };
@@ -546,7 +569,7 @@ if(!isAuthorized) return;
 
 
   useEffect(() => {
-if(!isAuthorized) return;
+    if (!isAuthorized) return;
     const update = encodeAwarenessUpdate(
       awareness,
       [awareness.clientID]
@@ -568,92 +591,96 @@ if(!isAuthorized) return;
 
 
 
-const editingCell = useSelector(
-  (state: any) => state.selection.editingCell
-);useEffect(() => {
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (!activeCell) return;
+  const editingCell = useSelector(
+    (state: any) => state.selection.editingCell
+  ); useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!activeCell) return;
 
-    if (editingCell) {
+      if (editingCell) {
+        switch (e.key) {
+          case "Escape":
+            e.preventDefault();
+            dispatch(setEditingCell(null));
+            return;
+
+          case "Enter":
+            e.preventDefault();
+            dispatch(setEditingCell(null));
+            return;
+
+          default:
+            return;
+        }
+      }
+
+      const [row, col] = activeCell.split("-").map(Number);
+
+      let newRow = row;
+      let newCol = col;
+
+
       switch (e.key) {
-        case "Escape":
+        case "ArrowUp":
           e.preventDefault();
-          dispatch(setEditingCell(null));
-          return;
+          newRow = row === 0 ? ROWS - 1 : row - 1;
+          break;
+
+        case "ArrowDown":
+          e.preventDefault();
+          newRow = row === ROWS - 1 ? 0 : row + 1;
+          break;
+
+        case "ArrowLeft":
+          e.preventDefault();
+          newCol = col === 0 ? COLS - 1 : col - 1;
+          break;
+
+        case "ArrowRight":
+          e.preventDefault();
+          newCol = col === COLS - 1 ? 0 : col + 1;
+          break;
 
         case "Enter":
           e.preventDefault();
-          dispatch(setEditingCell(null));
+          dispatch(setEditingCell(activeCell));
+          return;
+        case "Backspace":
+          e.preventDefault()
+          dispatch(setEditingCell(activeCell));
           return;
 
-        default:
+        default: {
+          const isCharacter =
+            e.key.length === 1 &&
+            !e.ctrlKey &&
+            !e.metaKey &&
+            !e.altKey;
+
+          if (!isCharacter) return;
+
+          e.preventDefault();
+
+          handleChange(row, col, e.key);
+
+          dispatch(setEditingCell(activeCell));
           return;
+        }
       }
-    }
 
-    const [row, col] = activeCell.split("-").map(Number);
+      const newCellId = `${newRow}-${newCol}`;
 
-    let newRow = row;
-    let newCol = col;
+      dispatch(setActiveCell(newCellId));
+      dispatch(setSelectionStart(newCellId));
+      dispatch(setSelectionEnd(newCellId));
+    };
 
+    window.addEventListener("keydown", handleKeyDown);
 
-    switch (e.key) {
-      case "ArrowUp":
-        e.preventDefault();
-        newRow = row === 0 ? ROWS - 1 : row - 1;
-        break;
-
-      case "ArrowDown":
-        e.preventDefault();
-        newRow = row === ROWS - 1 ? 0 : row + 1;
-        break;
-
-      case "ArrowLeft":
-        e.preventDefault();
-        newCol = col === 0 ? COLS - 1 : col - 1;
-        break;
-
-      case "ArrowRight":
-        e.preventDefault();
-        newCol = col === COLS - 1 ? 0 : col + 1;
-        break;
-
-      case "Enter":
-        e.preventDefault();
-        dispatch(setEditingCell(activeCell));
-        return;
-
-      default: {
-        const isCharacter =
-          e.key.length === 1 &&
-          !e.ctrlKey &&
-          !e.metaKey &&
-          !e.altKey;
-
-        if (!isCharacter) return;
-
-        e.preventDefault();
-
-        handleChange(row, col, e.key);
-
-        dispatch(setEditingCell(activeCell));
-        return;
-      }
-    }
-
-    const newCellId = `${newRow}-${newCol}`;
-
-    dispatch(setActiveCell(newCellId));
-    dispatch(setSelectionStart(newCellId));
-    dispatch(setSelectionEnd(newCellId));
-  };
-
-  window.addEventListener("keydown", handleKeyDown);
-
-  return () => {
-    window.removeEventListener("keydown", handleKeyDown);
-  };
-}, [activeCell, editingCell, dispatch]);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [activeCell, editingCell, dispatch]);
 
 
 
@@ -663,21 +690,22 @@ const editingCell = useSelector(
   }
 
 
-if (loadError) {
-  return (
-    <div className="flex items-center justify-center h-[70vh]">
-      <div className="text-center">
-        <h2 className="text-xl font-semibold">
-          Access Denied
-        </h2>
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center h-[70vh]">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold">
+            Access Denied
+          </h2>
 
-        <p className="text-muted-foreground mt-2">
-          {loadError}
-        </p>
+          <p className="text-muted-foreground mt-2">
+            {loadError}
+          </p>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
+
 
 
 
@@ -710,10 +738,14 @@ if (loadError) {
             {Array.from({ length: COLS }).map((_, col) => {
               const cellId = `${row}-${col}`;
 
+              const value = cells[cellId] || "";
+              const displayValue = isFormula(value) ? evaluateFormula(value, cells): value;
+
               return (
                 <Cell
                   key={cellId}
-                  value={cells[cellId] || ""}
+                  value={value}
+                  displayValue = {displayValue}
                   row={row}
                   col={col}
                   handleChange={handleChange}

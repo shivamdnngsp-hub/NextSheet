@@ -33,9 +33,6 @@ const CellEditor = React.memo(({ value, row, col, handleChange, inputRefs }: Cel
   };
 
 
-  const ROWS = 10;
-  const COLS = 10;
-
 
   const stopEditing = () => {
     dispatch(setEditingCell(null));
@@ -58,7 +55,6 @@ const CellEditor = React.memo(({ value, row, col, handleChange, inputRefs }: Cel
       onClick={handleClick}
       autoFocus
       onBlur={stopEditing}
-      // onKeyDown={handleKeyDown}
       className={`
   h-12
   w-20
