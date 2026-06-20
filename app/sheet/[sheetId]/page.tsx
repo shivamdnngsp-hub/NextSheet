@@ -1,6 +1,7 @@
 "use client";
 
 import { ModeToggle } from "@/components/modeToggle";
+import FormulaBar from "@/components/sheet/formulaBar";
 import SheetGrid from "@/components/sheet/sheetGrid";
 import { Spinner } from "@/components/ui/spinner";
 import useAuth from "@/hooks/useAuth";
@@ -18,11 +19,12 @@ const Sheet = () => {
   const presentUser = useSelector((state: any) => state.presence.presentUser)
   const {user,loading} = useAuth();
   const sheetId = params.sheetId as string
+   const [cells, setCells] = useState<Record<string, string>>({});
   const {awareness} = getYSheet(sheetId)
  const presentUserExcludingMe = presentUser
+ .filter((present:any) =>present?.id?.toString() !== user?.id?.toString())
+.filter((present: any, index: number, arr: any[]) =>index === arr.findIndex((p) => p.id === present.id));
 
-  .filter((present:any) =>present?.id?.toString() !== user?.id?.toString())
-  .filter((present: any, index: number, arr: any[]) =>index === arr.findIndex((p) => p.id === present.id));
  
 
  console.log("auth user", user?.id);
@@ -85,8 +87,8 @@ if(loading || !user){
       <ModeToggle />
     </div>
   </div>
-
-  <SheetGrid />
+   <FormulaBar cells={cells}></FormulaBar>
+  <SheetGrid cells = {cells} setCells={setCells} />
 </div>
   );
 };

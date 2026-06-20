@@ -21,11 +21,16 @@ import { evaluateFormula, getCellValue, getReferences, isFormula } from "@/lib/f
 import { dependencyGraph } from "@/lib/formula/dependencyGraph";
 
 
-const SheetGrid = () => {
+type SheetGridProps = {
+  cells: Record<string, string>;
+  setCells: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+};
+
+
+
+const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
   const ROWS = 10;
   const COLS = 10;
-
-  const [cells, setCells] = useState<Record<string, string>>({});
   const params = useParams()
   const sheetId = params.sheetId as string
   const [loading, setLoading] = useState(true);
@@ -293,7 +298,7 @@ const SheetGrid = () => {
   },
     []
   );
- 
+
 
 
 
@@ -739,13 +744,13 @@ const SheetGrid = () => {
               const cellId = `${row}-${col}`;
 
               const value = cells[cellId] || "";
-              const displayValue = isFormula(value) ? evaluateFormula(value, cells): value;
+              const displayValue = isFormula(value) ? evaluateFormula(value, cells) : value;
 
               return (
                 <Cell
                   key={cellId}
                   value={value}
-                  displayValue = {displayValue}
+                  displayValue={displayValue}
                   row={row}
                   col={col}
                   handleChange={handleChange}
