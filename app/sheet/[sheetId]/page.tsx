@@ -3,6 +3,7 @@
 import { ModeToggle } from "@/components/modeToggle";
 import FormulaBar from "@/components/sheet/formulaBar";
 import SheetGrid from "@/components/sheet/sheetGrid";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import useAuth from "@/hooks/useAuth";
 import { socket } from "@/lib/socket";
@@ -24,6 +25,7 @@ const Sheet = () => {
  const presentUserExcludingMe = presentUser
  .filter((present:any) =>present?.id?.toString() !== user?.id?.toString())
 .filter((present: any, index: number, arr: any[]) =>index === arr.findIndex((p) => p.id === present.id));
+const [copied,setCopied] = useState<boolean>(false)
 
  
 
@@ -31,18 +33,7 @@ const Sheet = () => {
 console.log("presence users", presentUser);
 
 
-useEffect(()=>{
-if(!params.sheetId){
-  return;
-}
 
-socket.emit("join-sheet", {sheetId: params.sheetId,clientId: awareness.clientID,});
-
-  return () => {
-    socket.emit("leave-sheet", params.sheetId);
-  };
-
-},[params.sheetId])
 
 useEffect(() => {
   dispatch(clearSelection());
@@ -65,6 +56,14 @@ if(loading || !user){
     <Spinner></Spinner>
   )
 }
+const handleCopy = async ()=>{
+  
+await  navigator.clipboard.writeText(window.location.href);
+setCopied(true)
+setTimeout(()=>{
+  setCopied(false);
+},2000)
+}
 
 
   return (
@@ -83,7 +82,10 @@ if(loading || !user){
           {Puser.userName[0].toUpperCase()}
         </div>
       ))}
-
+      
+      <Button onClick = {handleCopy}>
+        {copied ? "Copied": "Copy Link"}
+      </Button>
       <ModeToggle />
     </div>
   </div>

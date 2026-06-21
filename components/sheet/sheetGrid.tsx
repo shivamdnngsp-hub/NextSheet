@@ -251,6 +251,20 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
   }, [sheetId]);
 
 
+  useEffect(() => {
+    if (!isAuthorized) return;
+
+    socket.emit("join-sheet", {
+      sheetId,
+      clientId: awareness.clientID,
+    });
+
+    return () => {
+      socket.emit("leave-sheet", sheetId);
+    };
+  }, [isAuthorized, sheetId]);
+
+
 
   useEffect(() => {
     if (loading) return;
@@ -310,7 +324,6 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
 
     const handler = () => {
       const obj = Object.fromEntries(ycells.entries()) as Record<string, string>;
-
       setCells(obj);
 
     };
@@ -342,6 +355,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
 
     socket.on("yjs-update", handleSocketUpdate);
     const handleYjsUpdate = (update: Uint8Array, origin: unknown) => {
+      console.log("herrrrrrrrrrrrrrrr")
       if (isHydrating.current) return;
 
       if (origin === "remote") return;
@@ -357,7 +371,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
       ydoc.off("update", handleYjsUpdate);
 
     };
-  }, [sheetId]);
+  }, [sheetId, isAuthorized]);
 
 
 
@@ -386,7 +400,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
       userName: user.userName,
       color: getUserColor(user.id),
     });
-  }, [user]);
+  }, [user, isAuthorized]);
 
 
 
@@ -526,7 +540,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
     };
 
 
-  }, [socket, sheetId])
+  }, [socket, sheetId, isAuthorized])
 
 
 
@@ -538,7 +552,6 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
 
     if (!isAuthorized) return;
     const handelAwarness = (update: any) => {
-
       applyAwarenessUpdate(awareness, new Uint8Array(update), "remote");
     };
 
@@ -552,7 +565,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
       );
     };
 
-  }, [socket]);
+  }, [socket, isAuthorized]);
 
 
 
@@ -570,15 +583,12 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
         handleClientDisconnect
       );
     };
-  }, []);
+  }, [isAuthorized]);
 
 
   useEffect(() => {
     if (!isAuthorized) return;
-    const update = encodeAwarenessUpdate(
-      awareness,
-      [awareness.clientID]
-    );
+    const update = encodeAwarenessUpdate(awareness, [awareness.clientID]);
 
     socket.emit("awareness-update", update, sheetId);
 
@@ -590,7 +600,32 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
     }, 15000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isAuthorized]);
+
+
+  useEffect(() => {
+    if (!isAuthorized) return;
+
+    const handlePresenceSync = () => {
+      console.log("SENDING RESPONSE TO REQUEST");
+      const update = encodeAwarenessUpdate(awareness, [awareness.clientID]);
+
+      socket.emit("awareness-update", update, sheetId);
+    };
+
+    socket.on("awareness-request", handlePresenceSync);
+
+    return () => {
+      socket.off("awareness-request", handlePresenceSync);
+    };
+  }, [isAuthorized, sheetId]);
+
+
+
+
+
+
+
 
 
 

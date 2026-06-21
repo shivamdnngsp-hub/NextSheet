@@ -15,9 +15,16 @@ export const POST = async (req: NextRequest) => {
            const body = await req.json();
         const {sheetId} = body;
        
+    
+        const sheet = await Sheet.findOne({ _id: sheetId});
+        const isOwner = sheet.owner.toString() === userId.toString();
+        const isColaborator = sheet.collaborators.some((id: any) => id.toString() === userId.toString())
+        if(!isOwner && !isColaborator){
+            sheet.collaborators.push(userId);
+            await sheet.save();
+        }
 
 
-        const sheet = await Sheet.findOne({ _id: sheetId, owner: userId });
         if (!sheet) {
             return NextResponse.json(
                 { message: "Sheet not found" },

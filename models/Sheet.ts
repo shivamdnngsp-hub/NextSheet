@@ -14,11 +14,16 @@ owner:{
 yjsState: {
     type: Buffer,
     default: Buffer.alloc(0)
-  }
-
-
-
-
+  },
+collaborators:[{
+    type: mongoose.Schema.Types.ObjectId,
+    ref:"User"
+}],
+SheetMode:{
+    type:String,
+     enum: ["private", "link"],
+    default: "link",
+}
 
 
 },{

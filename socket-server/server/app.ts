@@ -24,8 +24,6 @@ const socketSheetMap = new Map<string, string>();
 io.on("connection", (socket) => {
   console.log("Connected:", socket.id);
 
-
-
    socket.on("disconnect", (reason) => {
     console.log("Disconnected:", socket.id, reason);
   });
@@ -35,6 +33,8 @@ socket.on("join-sheet", ({ sheetId, clientId }) => {
 
   socketClientMap.set(socket.id, clientId);
   socketSheetMap.set(socket.id, sheetId);
+  socket.to(sheetId).emit("awareness-request");
+
 });
 
   socket.on("leave-sheet", (sheetId) => {
@@ -42,6 +42,7 @@ socket.on("join-sheet", ({ sheetId, clientId }) => {
   });
 
 socket.on("yjs-update", ({ sheetId, update }) => {
+   console.log("senttt")
   socket.to(sheetId).emit("yjs-update", update);
 });
 
