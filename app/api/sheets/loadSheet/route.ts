@@ -18,9 +18,9 @@ export const POST = async (req: NextRequest) => {
     
         const sheet = await Sheet.findOne({ _id: sheetId});
         const isOwner = sheet.owner.toString() === userId.toString();
-        const isColaborator = sheet.collaborators.some((id: any) => id.toString() === userId.toString())
+        const isColaborator = sheet.collaborators.some((c: any) => c.user.toString() === userId.toString())
         if(!isOwner && !isColaborator){
-            sheet.collaborators.push(userId);
+            sheet.collaborators.push({ user: userId, role: "viewer"});
             await sheet.save();
         }
 
@@ -31,9 +31,15 @@ export const POST = async (req: NextRequest) => {
                 { status: 404 }
             );
         }
+         
+        const role = isOwner ? "owner" : sheet.collaborators.find( (c: any) => c.user.toString() === userId.toString())?.role;
+
+
+
+
 
         return NextResponse.json(
-            { message: "Sheet fetched successfully", sheet },
+            { message: "Sheet fetched successfully", sheet ,role},
             { status: 200 }
         )
 

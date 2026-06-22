@@ -19,6 +19,7 @@ import getYSheet from "@/yjs/ydoc";
 import { setActiveCell, setEditingCell, setSelectionEnd, setSelectionStart } from "@/redux/slices/selectionSlice";
 import { evaluateFormula, getCellValue, getReferences, isFormula } from "@/lib/formula/formulaEngine";
 import { dependencyGraph } from "@/lib/formula/dependencyGraph";
+import { set } from "mongoose";
 
 
 type SheetGridProps = {
@@ -43,10 +44,8 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
   const undoManagerRef = useRef<Y.UndoManager | null>(null);
   const { ydoc, ycells, awareness } = getYSheet(sheetId)
   const [loadError, setLoadError] = useState("");
-  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
-
-
-
+ const [role, setRole] = useState<"owner"|"editor"|"viewer"| null>(null);
+ 
 
   const handleCopy = async () => {
 
@@ -77,6 +76,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
   }
 
   const handlePaste = async () => {
+    if (role === "viewer") return;
     const value = await navigator.clipboard.readText();
     const rows = value.split(/\r?\n/);
 
@@ -94,6 +94,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
   }
 
   const handleCut = async () => {
+    if (role === "viewer") return;
     const [startRow, startCol] = selectionStart.split("-").map(Number);
     const [endRow, endCol] = selectionEnd.split("-").map(Number)
 
@@ -165,23 +166,6 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   useEffect(() => {
     undoManagerRef.current = new Y.UndoManager(ycells);
   }, []);
@@ -217,7 +201,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
         console.log(sheetId)
         const res = await api.post(`/sheets/loadSheet`, { sheetId });
         console.log(res.data)
-        setIsAuthorized(true);
+        setRole(res.data.role);
         isHydrating.current = true;
 
         const binary = res.data.sheet.yjsState?.data;
@@ -240,7 +224,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
         } else {
           setLoadError("Failed to load sheet.");
         }
-        setIsAuthorized(false);
+        setRole(null);
       } finally {
         setLoading(false);
         isHydrating.current = false;
@@ -252,7 +236,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
 
 
   useEffect(() => {
-    if (!isAuthorized) return;
+    if (!role) return;
 
     socket.emit("join-sheet", {
       sheetId,
@@ -262,34 +246,31 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
     return () => {
       socket.emit("leave-sheet", sheetId);
     };
-  }, [isAuthorized, sheetId]);
+  }, [role, sheetId]);
 
 
 
   useEffect(() => {
     if (loading) return;
-    if (!isAuthorized) return;
+    if (!role) return;
 
     const timer = setTimeout(async () => {
+      if(role === "viewer" ) return ;
       const update = Y.encodeStateAsUpdate(ydoc);
 
-      console.log(
-        "saving size",
-        ycells.size,
-        Array.from(Y.encodeStateAsUpdate(ydoc))
-      );
-
+  
       await api.post(`/sheets/saveSheet`, { update: Array.from(update), sheetId })
     }, 1000)
 
 
     return () => clearTimeout(timer);
 
-  }, [cells, sheetId, loading])
+  }, [cells, sheetId, loading,role])
 
 
 
   const handleChange = useCallback((row: number, col: number, value: string) => {
+    if (role === "viewer") return;
     const cellId = `${row}-${col}`;
 
     if (isFormula(value)) {
@@ -319,7 +300,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
 
 
   useEffect(() => {
-    if (!isAuthorized) return;
+    if (!role) return;
     if (isHydrating.current) return
 
     const handler = () => {
@@ -331,12 +312,12 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
     ycells.observe(handler);
     return () => ycells.unobserve(handler);
 
-  }, [isAuthorized])
+  }, [role])
 
 
 
   useEffect(() => {
-    if (!isAuthorized) return;
+    if (!role) return;
     if (!sheetId) return;
 
     const handleSocketUpdate = (update: ArrayBuffer) => {
@@ -355,7 +336,6 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
 
     socket.on("yjs-update", handleSocketUpdate);
     const handleYjsUpdate = (update: Uint8Array, origin: unknown) => {
-      console.log("herrrrrrrrrrrrrrrr")
       if (isHydrating.current) return;
 
       if (origin === "remote") return;
@@ -371,7 +351,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
       ydoc.off("update", handleYjsUpdate);
 
     };
-  }, [sheetId, isAuthorized]);
+  }, [sheetId, role]);
 
 
 
@@ -393,14 +373,14 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
 
 
   useEffect(() => {
-    if (!isAuthorized) return;
+    if (!role) return;
     if (!user) return;
     awareness.setLocalStateField("user", {
       id: user.id,
       userName: user.userName,
       color: getUserColor(user.id),
     });
-  }, [user, isAuthorized]);
+  }, [user, role]);
 
 
 
@@ -421,14 +401,9 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
 
 
   useEffect(() => {
-    if (!isAuthorized) return;
+    if (!role) return;
     const handelAwarnessChange = ({ added, updated, removed }: any, origin: any) => {
 
-
-      console.log("added", added);
-      console.log("updated", updated);
-      console.log("removed", removed);
-      console.log("states", [...awareness.getStates().entries()]);
 
       type PresentUser = {
         id: string;
@@ -458,8 +433,8 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
 
         const ele = document.querySelector(`[data-cell-id="${cellId}"]`) as HTMLElement;
         if (ele) {
-          ele.classList.add("border-2", "border-dashed")
-          ele.style.borderColor = color;
+          ele.style.boxShadow = `inset 0 0 0 2px ${color}`;
+        ele.style.backgroundColor = `${color}10`;
         }
 
         clientCellMap.set(clientId, cellId);
@@ -481,23 +456,18 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
         if (oldCellId) {
           const ele = document.querySelector(`[data-cell-id="${oldCellId}"]`) as HTMLElement;
 
-          ele?.classList.remove("border-2", "border-dashed");
           if (ele) {
-            ele.style.borderColor = "";
+           ele.style.boxShadow = "";
+           ele.style.backgroundColor = "";
           }
         }
 
 
         const ele = document.querySelector(`[data-cell-id="${newCellId}"]`) as HTMLElement;
         if (ele) {
-          ele.classList.add("border-2", "border-dashed")
-          ele.style.borderColor = color;
+       ele.style.boxShadow = `inset 0 0 0 2px ${color}`;
+       ele.style.backgroundColor = `${color}10`;
         }
-
-
-
-        console.log("old", oldCellId);
-        console.log("new", newCellId);
 
         clientCellMap.set(clientId, newCellId);
       });
@@ -513,8 +483,8 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
           const oldCellId = clientCellMap.get(clientId);
           const ele = document.querySelector(`[data-cell-id="${oldCellId}"]`) as HTMLElement;
           if (ele) {
-            ele.classList.remove("border-2", "border-dashed");
-            ele.style.borderColor = "";
+            ele.style.boxShadow = "";
+            ele.style.backgroundColor = "";
           }
 
           clientCellMap.delete(clientId);
@@ -540,7 +510,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
     };
 
 
-  }, [socket, sheetId, isAuthorized])
+  }, [socket, sheetId, role])
 
 
 
@@ -550,7 +520,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
 
   useEffect(() => {
 
-    if (!isAuthorized) return;
+    if (!role) return;
     const handelAwarness = (update: any) => {
       applyAwarenessUpdate(awareness, new Uint8Array(update), "remote");
     };
@@ -565,12 +535,12 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
       );
     };
 
-  }, [socket, isAuthorized]);
+  }, [socket, role]);
 
 
 
   useEffect(() => {
-    if (!isAuthorized) return;
+    if (!role) return;
     const handleClientDisconnect = (clientId: number) => {
       removeAwarenessStates(awareness, [clientId], "remote");
     };
@@ -583,11 +553,11 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
         handleClientDisconnect
       );
     };
-  }, [isAuthorized]);
+  }, [role]);
 
 
   useEffect(() => {
-    if (!isAuthorized) return;
+    if (!role) return;
     const update = encodeAwarenessUpdate(awareness, [awareness.clientID]);
 
     socket.emit("awareness-update", update, sheetId);
@@ -600,14 +570,13 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
     }, 15000);
 
     return () => clearInterval(interval);
-  }, [isAuthorized]);
+  }, [role]);
 
 
   useEffect(() => {
-    if (!isAuthorized) return;
+    if (!role) return;
 
     const handlePresenceSync = () => {
-      console.log("SENDING RESPONSE TO REQUEST");
       const update = encodeAwarenessUpdate(awareness, [awareness.clientID]);
 
       socket.emit("awareness-update", update, sheetId);
@@ -618,16 +587,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
     return () => {
       socket.off("awareness-request", handlePresenceSync);
     };
-  }, [isAuthorized, sheetId]);
-
-
-
-
-
-
-
-
-
+  }, [role, sheetId]);
 
 
 
@@ -683,14 +643,17 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
 
         case "Enter":
           e.preventDefault();
+          if (role === "viewer") return;
           dispatch(setEditingCell(activeCell));
           return;
         case "Backspace":
+          if (role === "viewer") return;
           e.preventDefault()
           dispatch(setEditingCell(activeCell));
           return;
 
         default: {
+          if (role === "viewer") return;
           const isCharacter =
             e.key.length === 1 &&
             !e.ctrlKey &&
@@ -720,7 +683,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [activeCell, editingCell, dispatch]);
+  }, [activeCell, editingCell, dispatch,role]);
 
 
 
@@ -791,6 +754,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
                   handleChange={handleChange}
                   isSelectingRef={isSelectingRef}
                   inputRefs={inputRefs}
+                  role={role}
                 />
               );
             })}

@@ -17,11 +17,10 @@ type CellProps = {
   ) => void;
   isSelectingRef: React.RefObject<boolean>;
   inputRefs: React.RefObject<Record<string, HTMLInputElement | null>>;
-
-
+role: "owner" | "editor" | "viewer" | null;
 };
 
-const Cell = React.memo(({ value, row, col, handleChange, isSelectingRef, inputRefs,displayValue}: CellProps) => {
+const Cell = React.memo(({ value, row, col, handleChange, isSelectingRef, inputRefs,displayValue,role}: CellProps) => {
 
   console.log("cell rendered", row, col);
 
@@ -38,6 +37,7 @@ if(isEditing){
   col = {col}
   handleChange = {handleChange}
   inputRefs={inputRefs}
+  role={role}
    ></CellEditor>
   )
 }
@@ -49,7 +49,7 @@ return(
   row = {row}
   col = {col}
   isSelectingRef={isSelectingRef}
-  
+  role={role}
   ></CellView>
 )
 

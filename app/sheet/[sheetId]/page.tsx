@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import useAuth from "@/hooks/useAuth";
 import { socket } from "@/lib/socket";
-import { clearSelection } from "@/redux/slices/selectionSlice";
+import { clearSelection, setActiveCell } from "@/redux/slices/selectionSlice";
 import getYSheet from "@/yjs/ydoc";
 
 import { useParams } from "next/navigation";

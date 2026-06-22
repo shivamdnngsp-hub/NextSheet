@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect } from "react";
 import { Input } from "../ui/input";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch} from "react-redux";
 import { setActiveCell, setEditingCell } from "@/redux/slices/selectionSlice";
 
 
@@ -15,9 +15,10 @@ type CellProps = {
     value: string
   ) => void;
   inputRefs: React.RefObject<Record<string, HTMLInputElement | null>>;
+  role: "owner" | "editor" | "viewer" | null;
 };
 
-const CellEditor = React.memo(({ value, row, col, handleChange, inputRefs }: CellProps) => {
+const CellEditor = React.memo(({ value, row, col, handleChange, inputRefs ,role}: CellProps) => {
 
   console.log("cell rendered", row, col);
 
@@ -37,13 +38,13 @@ const CellEditor = React.memo(({ value, row, col, handleChange, inputRefs }: Cel
   const stopEditing = () => {
     dispatch(setEditingCell(null));
   }
-
-
+const viewer = role === "viewer";
 
   console.log("ineditor")
   return (
     <Input
       data-cell-id={cellId}
+      disabled = {viewer}
       ref={(el) => {
         inputRefs.current[cellId] = el;
       }}
@@ -60,7 +61,6 @@ const CellEditor = React.memo(({ value, row, col, handleChange, inputRefs }: Cel
   w-20
   px-2
   rounded-none
-  
 `}
 
     />

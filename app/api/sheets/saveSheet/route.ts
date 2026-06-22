@@ -13,13 +13,34 @@ export const POST = async (req: NextRequest) => {
         const { userId } = result;
 
         const body = await req.json();
-        const { update ,sheetId} = body;
-       
+        const { update, sheetId } = body;
 
-        await Sheet.findByIdAndUpdate(
-            {_id:sheetId,owner:userId },
-            {yjsState: Buffer.from(update)}
-        )
+        const sheet = await Sheet.findById(sheetId);
+        if (!sheet) {
+            return NextResponse.json(
+                { message: "Sheet not found" },
+                { status: 404 }
+            );
+        }
+        let role = null;
+        if (sheet.owner.toString() === userId.toString()) {
+            role = "owner";
+        } else {
+            role = sheet.collaborators.find(
+                (c: any) => c.user.toString() === userId.toString()
+            )?.role;
+        }
+
+        if (role !== "owner" && role !== "editor") {
+            return NextResponse.json(
+                { message: "Permission denied" },
+                { status: 403 }
+            );
+        }
+
+        sheet.yjsState = Buffer.from(update);
+        await sheet.save();
+
 
         return NextResponse.json(
             { message: "saved succesfully" },

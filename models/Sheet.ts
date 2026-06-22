@@ -16,8 +16,17 @@ yjsState: {
     default: Buffer.alloc(0)
   },
 collaborators:[{
+
+user:{
     type: mongoose.Schema.Types.ObjectId,
     ref:"User"
+},
+role:{
+    type:String,
+    enum:["viewer","editor"],
+    default:"editor"
+}
+
 }],
 SheetMode:{
     type:String,

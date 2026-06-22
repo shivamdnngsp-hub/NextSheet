@@ -38,11 +38,19 @@ socket.on("join-sheet", ({ sheetId, clientId }) => {
 });
 
   socket.on("leave-sheet", (sheetId) => {
-    socket.leave(sheetId);
+   const clientId = socketClientMap.get(socket.id);
+
+  if (clientId) {
+      socket.to(sheetId).emit(
+        "awareness-client-disconnected",
+        clientId
+    );
+  }
+  socket.leave(sheetId);
+  socketSheetMap.delete(socket.id);
   });
 
 socket.on("yjs-update", ({ sheetId, update }) => {
-   console.log("senttt")
   socket.to(sheetId).emit("yjs-update", update);
 });
 

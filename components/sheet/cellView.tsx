@@ -7,11 +7,12 @@ type CellViewProps = {
   row: number;
   col: number;
   isSelectingRef: React.RefObject<boolean>;
+  role: "owner" | "editor" | "viewer" | null;
 };
 
 
 
-const CellView = React.memo(({ value, row, col, isSelectingRef }: CellViewProps) => {
+const CellView = React.memo(({ value, row, col, isSelectingRef , role}: CellViewProps) => {
   const dispatch = useDispatch();
 
   const cellId = `${row}-${col}`;
@@ -23,6 +24,7 @@ const CellView = React.memo(({ value, row, col, isSelectingRef }: CellViewProps)
     dispatch(setActiveCell(cellId));
   };
   const handleDoubleClick = () => {
+    if(role === "viewer") return 
     dispatch(setActiveCell(cellId));
     dispatch(setEditingCell(cellId));
   };
