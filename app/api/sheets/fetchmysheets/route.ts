@@ -15,7 +15,8 @@ export const GET = async (req: NextRequest) => {
 
     const { userId } = result;
 
-   const mySheets = await Sheet.find({ owner: userId }).sort({ updatedAt: -1 });
+  const mySheets = await Sheet.find({owner: userId,}).populate("collaborators.user", "userName").sort({ updatedAt: -1 });
+
 
     return NextResponse.json(
       {
