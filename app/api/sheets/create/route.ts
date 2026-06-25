@@ -48,7 +48,7 @@ if(!validationResults.success){
 } catch (error) {
      console.log("Error->",error)
     return NextResponse.json(
-        {messgae:"Internal server error in creating new sheet"},
+        {message:"Internal server error in creating new sheet"},
         {status:500}
     )
 }

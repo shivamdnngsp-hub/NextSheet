@@ -7,18 +7,15 @@ import SideBar from "@/components/sideBar"
 import useAuth from "@/hooks/useAuth"
 import { useEffect } from "react"
 
-const DashBoared = () => {
+const Starred = () => {
 
     return (
 <>
-    <Header title="DashBoard"/>
-    <div className="space-y-12 px-10 py-8">
-      <Mysheets />
-      <CollabSheets />
-    </div>
+    <Header title="Starred Sheets"/>
+    
  </>
     )
 
 
 }
-export default DashBoared
+export default Starred

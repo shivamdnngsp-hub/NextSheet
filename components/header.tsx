@@ -4,14 +4,18 @@ import useAuth from "@/hooks/useAuth";
 import { FileSpreadsheet } from "lucide-react";
 import CreateSheet from "./createSheet/createSheet";
 
-const Header = () => {
+type HeaderPops = {
+  title:string
+}
+
+const Header = ({title}:HeaderPops) => {
     
   return (
 <header className="border-b">
   <div className="h-20 flex items-center justify-between px-8">
 
     <h1 className="text-[34px] font-semibold tracking-tight">
-      Dashboard
+      {title}
     </h1>
 
     <div className="flex items-center gap-4">
