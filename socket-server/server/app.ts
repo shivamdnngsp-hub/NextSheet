@@ -7,6 +7,10 @@ const app = express();
 
 app.use(cors());
 
+app.get("/", (_, res) => {
+  res.send("Socket Server Running");
+});
+
 const server = http.createServer(app);
 
 const io = new Server(server, {
