@@ -30,5 +30,8 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
 , "app/api/sheets/removeStarred"  ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "socket-server"
+  ]
 }
