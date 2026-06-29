@@ -39,9 +39,6 @@ export default function RootLayout({
         </AuthProvider>
         </ReduxProvider>
         </ThemeProvider>
-
-        
-        
         </body>
     </html>
   );

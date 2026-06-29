@@ -7,6 +7,7 @@ import api from "@/lib/axios";
 import { Spinner } from "../ui/spinner";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog";
+import { Plus } from "lucide-react";
 
 
 
@@ -39,11 +40,23 @@ const CreateSheet = () => {
   }
 
   return (
-
 <>
- <Button onClick={()=> setOpen(true)}>
+  <Button
+    variant="ghost"
+    size="icon"
+    className="md:hidden"
+    onClick={() => setOpen(true)}
+  >
+    <Plus className="h-7! w-7! " />
+  </Button>
+
+  
+  <Button
+    className="hidden md:flex"
+    onClick={() => setOpen(true)}
+  >
     Create Sheet
-    </Button>
+  </Button>
 
 
 <Dialog open={open} onOpenChange={setOpen} >
@@ -75,9 +88,7 @@ const CreateSheet = () => {
     </Button>
   </DialogContent>
 </Dialog>
-
 </>
-
 
   );
 };

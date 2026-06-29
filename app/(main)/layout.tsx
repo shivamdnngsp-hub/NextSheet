@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+
 import SideBar from "@/components/sideBar";
 
 const MainLayout = ({children,}: {children: React.ReactNode;}) => {

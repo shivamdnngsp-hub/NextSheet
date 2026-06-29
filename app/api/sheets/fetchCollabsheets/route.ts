@@ -12,7 +12,7 @@ try {
     }
 
 const {userId} = result;
-const collabSheets = await Sheet.find({"collaborators.user": userId});
+const collabSheets = await Sheet.find({"collaborators.user": userId}).populate("collaborators.user");
  return NextResponse.json(
       {
         message: "Collaboration Sheets fetched successfully",collabSheets},
