@@ -7,6 +7,7 @@ import ToolBar from "@/components/toolBar";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import useAuth from "@/hooks/useAuth";
+import api from "@/lib/axios";
 import { socket } from "@/lib/socket";
 import { clearSelection, setActiveCell } from "@/redux/slices/selectionSlice";
 import getYSheet from "@/yjs/ydoc";
@@ -45,11 +46,19 @@ const Sheet = () => {
  .filter((present:any) =>present?.id?.toString() !== user?.id?.toString())
 .filter((present: any, index: number, arr: any[]) =>index === arr.findIndex((p) => p.id === present.id));
 const [copied,setCopied] = useState<boolean>(false)
+  const [saving,setSaving] = useState(false);
+const [title, setTitle] = useState("");
+  const [role, setRole] = useState<"owner" | "editor" | "viewer" | null>(null);
 
- 
+useEffect(() => {
+  const fetchMeta = async () => {
+    const res = await api.post("/sheets/fetchSheetInfo", {sheetId});
+    setTitle(res.data.title);
+    setRole(res.data.role);
+  };
 
- console.log("auth user", user?.id);
-console.log("presence users", presentUser);
+  fetchMeta();
+}, [sheetId]);
 
 
 
@@ -84,36 +93,119 @@ setTimeout(()=>{
 },2000)
 }
 
+return (
+  <div className="w-full">
+    <div className="border-b bg-background">
 
-  return (
-  <div>
-  <div className="flex items-center justify-between p-4">
-    <p>{params.sheetId}</p>
-    <ToolBar styles={styles}/>
+     
+      <div className="flex items-center justify-between gap-4 px-4 py-3">
 
-    <div className="flex items-center gap-2">
-      {presentUserExcludingMe.map((Puser: any) => (
-        <div
-          key={Puser.id}
-          className="h-8 w-8 rounded-full flex items-center justify-center text-white font-semibold cursor-default"
-          style={{ backgroundColor: Puser.color }}
-          title={Puser.userName}
-        >
-          {Puser.userName[0].toUpperCase()}
+      
+        <div className="flex min-w-0 items-center gap-3">
+
+        
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-900/40 text-base font-bold text-emerald-400">
+            {title?.charAt(0).toUpperCase()}
+          </div>
+
+          <div className="min-w-0">
+
+            <div className="flex items-center gap-2">
+
+              <h1 className="truncate text-lg font-semibold">
+                {title}
+              </h1>
+
+              <div className="flex -space-x-2 sm:hidden">
+                {presentUserExcludingMe.map((Puser: any) => (
+                  <div
+                    key={Puser.id}
+                    className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background text-[10px] font-semibold text-white"
+                    style={{ backgroundColor: Puser.color }}
+                    title={Puser.userName}
+                  >
+                    {Puser.userName[0].toUpperCase()}
+                  </div>
+                ))}
+              </div>
+
+            </div>
+
+            <p className="truncate text-xs text-muted-foreground">
+              Collaborative Spreadsheet
+            </p>
+
+          </div>
         </div>
-      ))}
-    
-      <Button onClick = {handleCopy}>
-        {copied ? "Copied": "Copy Link"}
-      </Button>
-      <ModeToggle />
+
+        <div className="flex shrink-0 items-center gap-2">
+
+          <div className="hidden items-center -space-x-2 sm:flex">
+            {presentUserExcludingMe.map((Puser: any) => (
+              <div
+                key={Puser.id}
+                className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background text-xs font-semibold text-white shadow-sm"
+                style={{ backgroundColor: Puser.color }}
+                title={Puser.userName}
+              >
+                {Puser.userName[0].toUpperCase()}
+              </div>
+            ))}
+          </div>
+
+          <span className="whitespace-nowrap text-xs text-muted-foreground sm:text-sm">
+            {saving ? "Saving..." : "✓ Saved"}
+          </span>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopy}
+          >
+            {copied ? "Copied" : "Share"}
+          </Button>
+
+          <ModeToggle />
+        </div>
+      </div>
+
+      <div className="overflow-x-auto border-y">
+        <ToolBar styles={styles} />
+      </div>
+
+   
+      <div className="relative border-b">
+  <FormulaBar cells={cells} />
+
+  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+    <span
+      className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
+        role === "owner"
+          ? "bg-emerald-500/15 text-emerald-500"
+          : role === "editor"
+          ? "bg-blue-500/15 text-blue-500"
+          : "bg-amber-500/15 text-amber-500"
+      }`}
+    >
+      {role}
+    </span>
+  </div>
+</div>
+    </div>
+
+
+    <div className="overflow-auto">
+      <SheetGrid
+        cells={cells}
+        setCells={setCells}
+        styles={styles}
+        setStyles={setStyles}
+        setSaving={setSaving}
+        role={role}
+      />
     </div>
   </div>
-   <FormulaBar cells={cells}></FormulaBar>
-  <SheetGrid cells={cells} setCells={setCells} styles={styles} setStyles={setStyles}
-/>
-</div>
-  );
+);
 };
 
 export default Sheet;

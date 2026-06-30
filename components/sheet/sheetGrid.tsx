@@ -32,9 +32,11 @@ type SheetGridProps = {
     setStyles: React.Dispatch<
         React.SetStateAction<Record<string, CellStyle>>
     >;
+ setSaving: React.Dispatch<React.SetStateAction<boolean>>;
+   role: "owner" | "editor" | "viewer" | null;
 };
 
-const SheetGrid = ({ cells, setCells ,styles,setStyles}: SheetGridProps) => {
+const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role}: SheetGridProps) => {
   const ROWS = 10;
   const COLS = 10;
   const params = useParams()
@@ -49,7 +51,8 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles}: SheetGridProps) => {
   const undoManagerRef = useRef<Y.UndoManager | null>(null);
   const { ydoc, ycells, ystyles, awareness } = getYSheet(sheetId);
   const [loadError, setLoadError] = useState("");
-  const [role, setRole] = useState<"owner" | "editor" | "viewer" | null>(null);
+
+
  
 
 
@@ -205,12 +208,8 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles}: SheetGridProps) => {
     const fetchSheet = async () => {
       try {
         setLoading(true)
-        console.log(sheetId)
         const res = await api.post(`/sheets/loadSheet`, { sheetId });
-        console.log(res.data)
-        setRole(res.data.role);
         isHydrating.current = true;
-
         const binary = res.data.sheet.yjsState?.data;
         console.log("sheet", sheetId);
         console.log("binary length", binary?.length);
@@ -232,7 +231,6 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles}: SheetGridProps) => {
         } else {
           setLoadError("Failed to load sheet.");
         }
-        setRole(null);
       } finally {
         setLoading(false);
         isHydrating.current = false;
@@ -258,22 +256,27 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles}: SheetGridProps) => {
 
 
 
-  useEffect(() => {
-    if (loading) return;
-    if (!role) return;
+ useEffect(() => {
+   if (loading) return;
+  if (!role || role === "viewer") return;
 
-    const timer = setTimeout(async () => {
-      if (role === "viewer") return;
+  setSaving(true);
+
+  const timer = setTimeout(async () => {
+    try {
       const update = Y.encodeStateAsUpdate(ydoc);
 
+      await api.post("/sheets/saveSheet", {
+        update: Array.from(update),
+        sheetId,
+      });
+    } finally {
+      setSaving(false);
+    }
+  }, 1000);
 
-      await api.post(`/sheets/saveSheet`, { update: Array.from(update), sheetId })
-    }, 1000)
-
-
-    return () => clearTimeout(timer);
-
-  }, [cells, sheetId, loading, role])
+  return () => clearTimeout(timer);
+}, [cells,role]);
 
 
 

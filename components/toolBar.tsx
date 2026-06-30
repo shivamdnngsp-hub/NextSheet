@@ -51,165 +51,156 @@ const ToolBar = ({ styles }: ToolBarProps) => {
       : {};
 
   return (
-    <div
-      className={`flex w-full items-center gap-2 overflow-x-auto border-b bg-background px-3 py-2 whitespace-nowrap transition-opacity ${
-        !activeCell ? "opacity-50" : "opacity-100"
-      }`}
+  <div
+    className={`flex w-full items-center gap-2 overflow-x-auto border-b bg-background px-4 py-3 whitespace-nowrap transition-opacity ${
+      !activeCell ? "opacity-50" : "opacity-100"
+    }`}
+  >
+    <Button
+      disabled={!activeCell}
+      size="icon"
+      className="h-9 w-9 shrink-0"
+      variant={currentStyle.bold ? "default" : "outline"}
+      onClick={() =>
+        styleUpdate(ystyles, activeCell!, {
+          bold: !currentStyle.bold,
+        })
+      }
     >
-      {/* Bold */}
-      <Button
+      <Bold className="h-4 w-4" />
+    </Button>
+
+    <Button
+      disabled={!activeCell}
+      size="icon"
+      className="h-9 w-9 shrink-0"
+      variant={currentStyle.italic ? "default" : "outline"}
+      onClick={() =>
+        styleUpdate(ystyles, activeCell!, {
+          italic: !currentStyle.italic,
+        })
+      }
+    >
+      <Italic className="h-4 w-4" />
+    </Button>
+
+    <Button
+      disabled={!activeCell}
+      size="icon"
+      className="h-9 w-9 shrink-0"
+      variant={currentStyle.underline ? "default" : "outline"}
+      onClick={() =>
+        styleUpdate(ystyles, activeCell!, {
+          underline: !currentStyle.underline,
+        })
+      }
+    >
+      <Underline className="h-4 w-4" />
+    </Button>
+
+    <Separator orientation="vertical" className="mx-1 h-7" />
+
+    <Select
+      disabled={!activeCell}
+      value={String(currentStyle.fontSize ?? 14)}
+      onValueChange={(value) =>
+        styleUpdate(ystyles, activeCell!, {
+          fontSize: Number(value),
+        })
+      }
+    >
+      <SelectTrigger className="h-9 w-20 shrink-0">
+        <SelectValue />
+      </SelectTrigger>
+
+      <SelectContent>
+        {fontSizes.map((size) => (
+          <SelectItem key={size} value={String(size)}>
+            {size}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+
+    <Separator orientation="vertical" className="mx-1 h-7" />
+
+    <div className="flex shrink-0 items-center gap-2 rounded-md border bg-muted/30 px-2 py-1">
+      <Type className="h-4 w-4" />
+
+      <Input
         disabled={!activeCell}
-        size="icon"
-        className="h-8 w-8"
-        variant={currentStyle.bold ? "default" : "outline"}
-        onClick={() =>
+        type="color"
+        className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0"
+        value={currentStyle.textColor ?? "#000000"}
+        onChange={(e) =>
           styleUpdate(ystyles, activeCell!, {
-            bold: !currentStyle.bold,
+            textColor: e.target.value,
           })
         }
-      >
-        <Bold className="h-4 w-4" />
-      </Button>
-
-      {/* Italic */}
-      <Button
-        disabled={!activeCell}
-        size="icon"
-        className="h-8 w-8"
-        variant={currentStyle.italic ? "default" : "outline"}
-        onClick={() =>
-          styleUpdate(ystyles, activeCell!, {
-            italic: !currentStyle.italic,
-          })
-        }
-      >
-        <Italic className="h-4 w-4" />
-      </Button>
-
-      {/* Underline */}
-      <Button
-        disabled={!activeCell}
-        size="icon"
-        className="h-8 w-8"
-        variant={currentStyle.underline ? "default" : "outline"}
-        onClick={() =>
-          styleUpdate(ystyles, activeCell!, {
-            underline: !currentStyle.underline,
-          })
-        }
-      >
-        <Underline className="h-4 w-4" />
-      </Button>
-
-      <Separator orientation="vertical" className="h-6" />
-
-      {/* Font Size */}
-      <Select
-        disabled={!activeCell}
-        value={String(currentStyle.fontSize ?? 14)}
-        onValueChange={(value) =>
-          styleUpdate(ystyles, activeCell!, {
-            fontSize: Number(value),
-          })
-        }
-      >
-        <SelectTrigger className="h-8 w-16">
-          <SelectValue />
-        </SelectTrigger>
-
-        <SelectContent>
-          {fontSizes.map((size) => (
-            <SelectItem key={size} value={String(size)}>
-              {size}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Separator orientation="vertical" className="h-6" />
-
-      {/* Text Color */}
-      <div className="flex items-center gap-1 rounded-md border px-2 py-1">
-        <Type className="h-4 w-4" />
-
-        <Input
-          disabled={!activeCell}
-          type="color"
-          className="h-6 w-8 cursor-pointer border-0 p-0"
-          value={currentStyle.textColor ?? "#000000"}
-          onChange={(e) =>
-            styleUpdate(ystyles, activeCell!, {
-              textColor: e.target.value,
-            })
-          }
-        />
-      </div>
-
-      {/* Background Color */}
-      <div className="flex items-center gap-1 rounded-md border px-2 py-1">
-        <PaintBucket className="h-4 w-4" />
-
-        <Input
-          disabled={!activeCell}
-          type="color"
-          className="h-6 w-8 cursor-pointer border-0 p-0"
-          value={currentStyle.backgroundColor ?? "#ffffff"}
-          onChange={(e) =>
-            styleUpdate(ystyles, activeCell!, {
-              backgroundColor: e.target.value,
-            })
-          }
-        />
-      </div>
-
-      <Separator orientation="vertical" className="h-6" />
-
-      {/* Align Left */}
-      <Button
-        disabled={!activeCell}
-        size="icon"
-        className="h-8 w-8"
-        variant={currentStyle.textAlign === "left" ? "default" : "outline"}
-        onClick={() =>
-          styleUpdate(ystyles, activeCell!, {
-            textAlign: "left",
-          })
-        }
-      >
-        <AlignLeft className="h-4 w-4" />
-      </Button>
-
-      {/* Align Center */}
-      <Button
-        disabled={!activeCell}
-        size="icon"
-        className="h-8 w-8"
-        variant={currentStyle.textAlign === "center" ? "default" : "outline"}
-        onClick={() =>
-          styleUpdate(ystyles, activeCell!, {
-            textAlign: "center",
-          })
-        }
-      >
-        <AlignCenter className="h-4 w-4" />
-      </Button>
-
-      {/* Align Right */}
-      <Button
-        disabled={!activeCell}
-        size="icon"
-        className="h-8 w-8"
-        variant={currentStyle.textAlign === "right" ? "default" : "outline"}
-        onClick={() =>
-          styleUpdate(ystyles, activeCell!, {
-            textAlign: "right",
-          })
-        }
-      >
-        <AlignRight className="h-4 w-4" />
-      </Button>
+      />
     </div>
-  );
+
+    <div className="flex shrink-0 items-center gap-2 rounded-md border bg-muted/30 px-2 py-1">
+      <PaintBucket className="h-4 w-4" />
+
+      <Input
+        disabled={!activeCell}
+        type="color"
+        className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0"
+        value={currentStyle.backgroundColor ?? "#ffffff"}
+        onChange={(e) =>
+          styleUpdate(ystyles, activeCell!, {
+            backgroundColor: e.target.value,
+          })
+        }
+      />
+    </div>
+
+    <Separator orientation="vertical" className="mx-1 h-7" />
+
+    <Button
+      disabled={!activeCell}
+      size="icon"
+      className="h-9 w-9 shrink-0"
+      variant={currentStyle.textAlign === "left" ? "default" : "outline"}
+      onClick={() =>
+        styleUpdate(ystyles, activeCell!, {
+          textAlign: "left",
+        })
+      }
+    >
+      <AlignLeft className="h-4 w-4" />
+    </Button>
+
+    <Button
+      disabled={!activeCell}
+      size="icon"
+      className="h-9 w-9 shrink-0"
+      variant={currentStyle.textAlign === "center" ? "default" : "outline"}
+      onClick={() =>
+        styleUpdate(ystyles, activeCell!, {
+          textAlign: "center",
+        })
+      }
+    >
+      <AlignCenter className="h-4 w-4" />
+    </Button>
+
+    <Button
+      disabled={!activeCell}
+      size="icon"
+      className="h-9 w-9 shrink-0"
+      variant={currentStyle.textAlign === "right" ? "default" : "outline"}
+      onClick={() =>
+        styleUpdate(ystyles, activeCell!, {
+          textAlign: "right",
+        })
+      }
+    >
+      <AlignRight className="h-4 w-4" />
+    </Button>
+  </div>
+);
 };
 
 export default ToolBar;

@@ -12,7 +12,8 @@ try {
     }
 
 const {userId} = result;
-const collabSheets = await Sheet.find({"collaborators.user": userId}).populate("collaborators.user");
+const collabSheets = await Sheet.find({"collaborators.user": userId,}).select("title owner collaborators updatedAt").populate("collaborators.user", "userName")
+  .sort({ updatedAt: -1 });
  return NextResponse.json(
       {
         message: "Collaboration Sheets fetched successfully",collabSheets},
