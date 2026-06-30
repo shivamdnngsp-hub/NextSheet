@@ -3,7 +3,7 @@ import React from "react";
 import {useSelector } from "react-redux";
 import CellEditor from "./cellEditor";
 import CellView from "./cellView";
-
+import type { CellStyle } from "@/types/cellStyle";
 
 type CellProps = {
   value: string;
@@ -18,9 +18,10 @@ type CellProps = {
   isSelectingRef: React.RefObject<boolean>;
   inputRefs: React.RefObject<Record<string, HTMLInputElement | null>>;
 role: "owner" | "editor" | "viewer" | null;
+ style?: CellStyle;
 };
 
-const Cell = React.memo(({ value, row, col, handleChange, isSelectingRef, inputRefs,displayValue,role}: CellProps) => {
+const Cell = React.memo(({ value, row, col, handleChange, isSelectingRef, inputRefs,displayValue,role,style}: CellProps) => {
 
   console.log("cell rendered", row, col);
 
@@ -38,6 +39,7 @@ if(isEditing){
   handleChange = {handleChange}
   inputRefs={inputRefs}
   role={role}
+  cellStyle={style}
    ></CellEditor>
   )
 }
@@ -50,6 +52,7 @@ return(
   col = {col}
   isSelectingRef={isSelectingRef}
   role={role}
+  cellStyle={style}
   ></CellView>
 )
 

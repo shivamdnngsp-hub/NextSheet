@@ -19,17 +19,22 @@ import getYSheet from "@/yjs/ydoc";
 import { setActiveCell, setEditingCell, setSelectionEnd, setSelectionStart } from "@/redux/slices/selectionSlice";
 import { evaluateFormula, getCellValue, getReferences, isFormula } from "@/lib/formula/formulaEngine";
 import { dependencyGraph } from "@/lib/formula/dependencyGraph";
-import { set } from "mongoose";
+import { Button } from "../ui/button";
+import type { CellStyle } from "@/types/cellStyle";
+
 
 
 type SheetGridProps = {
   cells: Record<string, string>;
   setCells: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+
+ styles: Record<string, CellStyle>;
+    setStyles: React.Dispatch<
+        React.SetStateAction<Record<string, CellStyle>>
+    >;
 };
 
-
-
-const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
+const SheetGrid = ({ cells, setCells ,styles,setStyles}: SheetGridProps) => {
   const ROWS = 10;
   const COLS = 10;
   const params = useParams()
@@ -42,10 +47,12 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
   const activeCell = useSelector((state: any) => state.selection.activeCell)
   const { selectionStart, selectionEnd } = useSelector((state: any) => state.selection);
   const undoManagerRef = useRef<Y.UndoManager | null>(null);
-  const { ydoc, ycells, awareness } = getYSheet(sheetId)
+  const { ydoc, ycells, ystyles, awareness } = getYSheet(sheetId);
   const [loadError, setLoadError] = useState("");
- const [role, setRole] = useState<"owner"|"editor"|"viewer"| null>(null);
+  const [role, setRole] = useState<"owner" | "editor" | "viewer" | null>(null);
  
+
+
 
   const handleCopy = async () => {
 
@@ -217,6 +224,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
 
 
         setCells(Object.fromEntries(ycells.entries()));
+        setStyles(Object.fromEntries(ystyles.entries()) as Record<string, CellStyle>);
 
       } catch (error: any) {
         if (error.response?.status === 404) {
@@ -255,17 +263,17 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
     if (!role) return;
 
     const timer = setTimeout(async () => {
-      if(role === "viewer" ) return ;
+      if (role === "viewer") return;
       const update = Y.encodeStateAsUpdate(ydoc);
 
-  
+
       await api.post(`/sheets/saveSheet`, { update: Array.from(update), sheetId })
     }, 1000)
 
 
     return () => clearTimeout(timer);
 
-  }, [cells, sheetId, loading,role])
+  }, [cells, sheetId, loading, role])
 
 
 
@@ -306,11 +314,15 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
     const handler = () => {
       const obj = Object.fromEntries(ycells.entries()) as Record<string, string>;
       setCells(obj);
-
+      setStyles(Object.fromEntries(ystyles.entries()) as Record<string, CellStyle>);
     };
 
     ycells.observe(handler);
-    return () => ycells.unobserve(handler);
+    ystyles.observe(handler);
+    return () => {
+      ycells.unobserve(handler);
+      ystyles.unobserve(handler);
+    };
 
   }, [role])
 
@@ -434,7 +446,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
         const ele = document.querySelector(`[data-cell-id="${cellId}"]`) as HTMLElement;
         if (ele) {
           ele.style.boxShadow = `inset 0 0 0 2px ${color}`;
-        ele.style.backgroundColor = `${color}10`;
+          ele.style.backgroundColor = `${color}10`;
         }
 
         clientCellMap.set(clientId, cellId);
@@ -457,16 +469,16 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
           const ele = document.querySelector(`[data-cell-id="${oldCellId}"]`) as HTMLElement;
 
           if (ele) {
-           ele.style.boxShadow = "";
-           ele.style.backgroundColor = "";
+            ele.style.boxShadow = "";
+            ele.style.backgroundColor = "";
           }
         }
 
 
         const ele = document.querySelector(`[data-cell-id="${newCellId}"]`) as HTMLElement;
         if (ele) {
-       ele.style.boxShadow = `inset 0 0 0 2px ${color}`;
-       ele.style.backgroundColor = `${color}10`;
+          ele.style.boxShadow = `inset 0 0 0 2px ${color}`;
+          ele.style.backgroundColor = `${color}10`;
         }
 
         clientCellMap.set(clientId, newCellId);
@@ -683,7 +695,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [activeCell, editingCell, dispatch,role]);
+  }, [activeCell, editingCell, dispatch, role]);
 
 
 
@@ -748,6 +760,7 @@ const SheetGrid = ({ cells, setCells }: SheetGridProps) => {
                 <Cell
                   key={cellId}
                   value={value}
+                  style={styles[cellId]}
                   displayValue={displayValue}
                   row={row}
                   col={col}

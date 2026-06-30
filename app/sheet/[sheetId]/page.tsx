@@ -3,6 +3,7 @@
 import { ModeToggle } from "@/components/modeToggle";
 import FormulaBar from "@/components/sheet/formulaBar";
 import SheetGrid from "@/components/sheet/sheetGrid";
+import ToolBar from "@/components/toolBar";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import useAuth from "@/hooks/useAuth";
@@ -14,6 +15,23 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+
+type CellStyle = {
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+
+  textColor?: string;
+  backgroundColor?: string;
+
+  fontSize?: number;
+  fontFamily?: string;
+
+  textAlign?: "left" | "center" | "right";
+};
+
+
+
 const Sheet = () => {
   const params = useParams();
   const dispatch = useDispatch()
@@ -21,6 +39,7 @@ const Sheet = () => {
   const {user,loading} = useAuth();
   const sheetId = params.sheetId as string
    const [cells, setCells] = useState<Record<string, string>>({});
+   const [styles, setStyles] = useState<Record<string, CellStyle>>({});
   const {awareness} = getYSheet(sheetId)
  const presentUserExcludingMe = presentUser
  .filter((present:any) =>present?.id?.toString() !== user?.id?.toString())
@@ -70,6 +89,7 @@ setTimeout(()=>{
   <div>
   <div className="flex items-center justify-between p-4">
     <p>{params.sheetId}</p>
+    <ToolBar styles={styles}/>
 
     <div className="flex items-center gap-2">
       {presentUserExcludingMe.map((Puser: any) => (
@@ -82,7 +102,7 @@ setTimeout(()=>{
           {Puser.userName[0].toUpperCase()}
         </div>
       ))}
-      
+    
       <Button onClick = {handleCopy}>
         {copied ? "Copied": "Copy Link"}
       </Button>
@@ -90,7 +110,8 @@ setTimeout(()=>{
     </div>
   </div>
    <FormulaBar cells={cells}></FormulaBar>
-  <SheetGrid cells = {cells} setCells={setCells} />
+  <SheetGrid cells={cells} setCells={setCells} styles={styles} setStyles={setStyles}
+/>
 </div>
   );
 };

@@ -1,6 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setActiveCell, setEditingCell, setSelectionEnd, setSelectionStart, } from "@/redux/slices/selectionSlice";
+import type { CellStyle } from "@/types/cellStyle";
 
 type CellViewProps = {
   value: string;
@@ -8,11 +9,12 @@ type CellViewProps = {
   col: number;
   isSelectingRef: React.RefObject<boolean>;
   role: "owner" | "editor" | "viewer" | null;
+  cellStyle?: CellStyle;
 };
 
 
 
-const CellView = React.memo(({ value, row, col, isSelectingRef , role}: CellViewProps) => {
+const CellView = React.memo(({ value, row, col, isSelectingRef, role, cellStyle }: CellViewProps) => {
   const dispatch = useDispatch();
 
   const cellId = `${row}-${col}`;
@@ -24,7 +26,7 @@ const CellView = React.memo(({ value, row, col, isSelectingRef , role}: CellView
     dispatch(setActiveCell(cellId));
   };
   const handleDoubleClick = () => {
-    if(role === "viewer") return 
+    if (role === "viewer") return
     dispatch(setActiveCell(cellId));
     dispatch(setEditingCell(cellId));
   };
@@ -62,7 +64,7 @@ const CellView = React.memo(({ value, row, col, isSelectingRef , role}: CellView
     }
   };
 
-  
+
   console.log("inCellView")
 
   return (
@@ -81,6 +83,23 @@ const CellView = React.memo(({ value, row, col, isSelectingRef , role}: CellView
           : ""
         }
         `}
+      style={{
+        fontWeight: cellStyle?.bold ? "bold" : "normal",
+        fontStyle: cellStyle?.italic ? "italic" : "normal",
+        textDecoration: cellStyle?.underline ? "underline" : "none",
+        color: cellStyle?.textColor,
+        backgroundColor: cellStyle?.backgroundColor,
+        fontSize: cellStyle?.fontSize
+          ? `${cellStyle.fontSize}px`
+          : undefined,
+        fontFamily: cellStyle?.fontFamily,
+        justifyContent:
+          cellStyle?.textAlign === "center"
+            ? "center"
+            : cellStyle?.textAlign === "right"
+              ? "flex-end"
+              : "flex-start",
+      }}
     >
       {value}
     </div>
