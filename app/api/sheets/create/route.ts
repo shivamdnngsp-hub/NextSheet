@@ -31,12 +31,15 @@ if(!validationResults.success){
 }
 
 
-    const {title} = validationResults.data
+    const {title,defaultCollaboratorRole} = validationResults.data
+   
 
     const sheet = await Sheet.create({
         title,
-        owner: userId
+        owner: userId,
+        defaultCollaboratorRole
     })
+    
 
     return NextResponse.json(
         {message:"Sheet created successfully", sheet:{sheetId: sheet._id,title:sheet.title, owner:sheet.owner}},

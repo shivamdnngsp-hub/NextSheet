@@ -10,6 +10,11 @@ owner:{
     ref:"User",
     required: true
 },
+defaultCollaboratorRole:{
+    type:String,
+    enum:["viewer","editor"],
+    default:"viewer"
+},
 
 yjsState: {
     type: Buffer,
@@ -24,7 +29,7 @@ user:{
 role:{
     type:String,
     enum:["viewer","editor"],
-    default:"editor"
+    default:"viewer"
 }
 
 }],

@@ -8,6 +8,8 @@ import { Spinner } from "../ui/spinner";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Plus } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { Label } from "../ui/label";
 
 
 
@@ -17,6 +19,7 @@ const CreateSheet = () => {
   const [loading, setLoading] = useState(false)
   const router = useRouter();
   const [open,setOpen] = useState(false)
+  const [defaultRole,setDefaultRole] = useState<"viewer" | "editor">("viewer")
 
   const submit = async () => {
     try {
@@ -27,7 +30,7 @@ const CreateSheet = () => {
         return
       }
 
-      const res = await api.post("/sheets/create", { title });
+      const res = await api.post("/sheets/create", { title, defaultCollaboratorRole: defaultRole});
       console.log(res.data.sheet);
       setOpen(false)
       router.push(`/sheet/${res.data.sheet.sheetId}`)
@@ -73,6 +76,27 @@ const CreateSheet = () => {
       value={title}
       onChange={(e) => setTitle(e.target.value)}
     />
+
+<div className="space-y-2">
+  <Label>Default collaborator permission</Label>
+
+  <RadioGroup
+    value={defaultRole}
+    onValueChange={(value) =>setDefaultRole(value as "viewer" | "editor")}
+    className="flex gap-6"
+  >
+    <div className="flex items-center space-x-2">
+      <RadioGroupItem value="viewer" id="viewer" />
+      <Label htmlFor="viewer">Viewer</Label>
+    </div>
+
+    <div className="flex items-center space-x-2">
+      <RadioGroupItem value="editor" id="editor" />
+      <Label htmlFor="editor">Editor</Label>
+    </div>
+  </RadioGroup>
+</div>
+
 
     {error && (
       <p className="text-sm text-red-500">

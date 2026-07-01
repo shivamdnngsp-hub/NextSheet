@@ -15,7 +15,7 @@ export const POST = async (req: NextRequest) => {
     const { sheetId } = await req.json();
 
     const sheet = await Sheet.findById(sheetId)
-      .select("title owner collaborators");
+      .select("title owner collaborators defaultCollaboratorRole");
 
     if (!sheet) {
       return NextResponse.json(
@@ -29,17 +29,18 @@ export const POST = async (req: NextRequest) => {
     const collaborator = sheet.collaborators.find(
       (c: any) => c.user.toString() === userId.toString()
     );
+  
 
     if (!isOwner && !collaborator) {
       sheet.collaborators.push({
         user: userId,
-        role: "viewer",
+       role: sheet.defaultCollaboratorRole
       });
       await sheet.save();
     }
 
     const role = isOwner ? "owner": sheet.collaborators.find((c: any) => c.user.toString() === userId.toString())?.role;
-
+  
     return NextResponse.json(
       {title: sheet.title,role,},
       { status: 200 }

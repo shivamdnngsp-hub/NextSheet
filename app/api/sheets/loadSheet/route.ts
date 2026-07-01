@@ -10,32 +10,30 @@ export const POST = async (req: NextRequest) => {
         if (result instanceof NextResponse) {
             return result;
         }
-        const { userId} = result;
+        const {userId} = result;
 
            const body = await req.json();
         const {sheetId} = body;
        
     
         const sheet = await Sheet.findOne({ _id: sheetId});
-        const isOwner = sheet.owner.toString() === userId.toString();
-        const isColaborator = sheet.collaborators.some((c: any) => c.user.toString() === userId.toString())
-        if(!isOwner && !isColaborator){
-            sheet.collaborators.push({ user: userId, role: "viewer"});
-            await sheet.save();
-        }
 
-
-        if (!sheet) {
+          if (!sheet) {
             return NextResponse.json(
                 { message: "Sheet not found" },
                 { status: 404 }
             );
         }
-         
+
+        const isOwner = sheet.owner.toString() === userId.toString();
+        const isColaborator = sheet.collaborators.some((c: any) => c.user.toString() === userId.toString())
+        if(!isOwner && !isColaborator){
+            sheet.collaborators.push({ user: userId, role: sheet.defaultCollaboratorRole});
+            await sheet.save();
+        }
+
         const role = isOwner ? "owner" : sheet.collaborators.find( (c: any) => c.user.toString() === userId.toString())?.role;
-
-
-
+    
 
 
         return NextResponse.json(

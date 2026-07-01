@@ -58,7 +58,7 @@ useEffect(() => {
   };
 
   fetchMeta();
-}, [sheetId]);
+}, [sheetId,user]);
 
 
 
@@ -170,7 +170,7 @@ return (
       </div>
 
       <div className="overflow-x-auto border-y">
-        <ToolBar styles={styles} />
+        <ToolBar styles={styles} role = {role}/>
       </div>
 
    

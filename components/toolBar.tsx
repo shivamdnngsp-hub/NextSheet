@@ -31,11 +31,12 @@ import type { CellStyle } from "@/types/cellStyle";
 
 type ToolBarProps = {
   styles: Record<string, CellStyle>;
+   role: "owner" | "editor" | "viewer" | null;
 };
 
 const fontSizes = [10, 12, 14, 16];
 
-const ToolBar = ({ styles }: ToolBarProps) => {
+const ToolBar = ({ styles ,role}: ToolBarProps) => {
   const params = useParams();
   const sheetId = params.sheetId as string;
 
@@ -45,19 +46,16 @@ const ToolBar = ({ styles }: ToolBarProps) => {
 
   const { ystyles } = getYSheet(sheetId);
 
-  const currentStyle =
-    activeCell && styles[activeCell]
-      ? styles[activeCell]
-      : {};
+  const currentStyle =activeCell && styles[activeCell] ? styles[activeCell] : {};
 
   return (
   <div
     className={`flex w-full items-center gap-2 overflow-x-auto border-b bg-background px-4 py-3 whitespace-nowrap transition-opacity ${
-      !activeCell ? "opacity-50" : "opacity-100"
+      (!activeCell || role == "viewer")? "opacity-50" : "opacity-100"
     }`}
   >
     <Button
-      disabled={!activeCell}
+      disabled={!activeCell || role == "viewer" }
       size="icon"
       className="h-9 w-9 shrink-0"
       variant={currentStyle.bold ? "default" : "outline"}
@@ -71,7 +69,7 @@ const ToolBar = ({ styles }: ToolBarProps) => {
     </Button>
 
     <Button
-      disabled={!activeCell}
+      disabled={!activeCell || role == "viewer" }
       size="icon"
       className="h-9 w-9 shrink-0"
       variant={currentStyle.italic ? "default" : "outline"}
@@ -85,7 +83,7 @@ const ToolBar = ({ styles }: ToolBarProps) => {
     </Button>
 
     <Button
-      disabled={!activeCell}
+      disabled={!activeCell || role == "viewer" }
       size="icon"
       className="h-9 w-9 shrink-0"
       variant={currentStyle.underline ? "default" : "outline"}
@@ -101,7 +99,7 @@ const ToolBar = ({ styles }: ToolBarProps) => {
     <Separator orientation="vertical" className="mx-1 h-7" />
 
     <Select
-      disabled={!activeCell}
+      disabled={!activeCell || role == "viewer" }
       value={String(currentStyle.fontSize ?? 14)}
       onValueChange={(value) =>
         styleUpdate(ystyles, activeCell!, {
@@ -128,7 +126,7 @@ const ToolBar = ({ styles }: ToolBarProps) => {
       <Type className="h-4 w-4" />
 
       <Input
-        disabled={!activeCell}
+        disabled={!activeCell || role == "viewer" }
         type="color"
         className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0"
         value={currentStyle.textColor ?? "#000000"}
@@ -144,7 +142,7 @@ const ToolBar = ({ styles }: ToolBarProps) => {
       <PaintBucket className="h-4 w-4" />
 
       <Input
-        disabled={!activeCell}
+        disabled={!activeCell || role == "viewer" }
         type="color"
         className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0"
         value={currentStyle.backgroundColor ?? "#ffffff"}
@@ -159,7 +157,7 @@ const ToolBar = ({ styles }: ToolBarProps) => {
     <Separator orientation="vertical" className="mx-1 h-7" />
 
     <Button
-      disabled={!activeCell}
+      disabled={!activeCell || role == "viewer" }
       size="icon"
       className="h-9 w-9 shrink-0"
       variant={currentStyle.textAlign === "left" ? "default" : "outline"}
@@ -173,7 +171,7 @@ const ToolBar = ({ styles }: ToolBarProps) => {
     </Button>
 
     <Button
-      disabled={!activeCell}
+      disabled={!activeCell || role == "viewer" }
       size="icon"
       className="h-9 w-9 shrink-0"
       variant={currentStyle.textAlign === "center" ? "default" : "outline"}
@@ -187,7 +185,7 @@ const ToolBar = ({ styles }: ToolBarProps) => {
     </Button>
 
     <Button
-      disabled={!activeCell}
+      disabled={!activeCell || role == "viewer" }
       size="icon"
       className="h-9 w-9 shrink-0"
       variant={currentStyle.textAlign === "right" ? "default" : "outline"}
