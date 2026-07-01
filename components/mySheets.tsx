@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { Star } from "lucide-react";
 import StarButton from "./starButton";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu";
+import { MoreVertical } from "lucide-react";
 
 type Sheet = {
   _id: string;
@@ -29,6 +31,7 @@ const Mysheets = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter()
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchSheets = async () => {
@@ -51,6 +54,29 @@ const Mysheets = () => {
 
     fetchSheets();
   }, []);
+
+
+  const handleDelete = async (sheetId: any) => {
+    try {
+      setDeleting(true);
+      await api.delete("/sheets/deleteSheet", { data: { sheetId } })
+
+      setSheets((prev) =>
+        prev.filter((sheet) => sheet._id !== sheetId)
+      );
+
+      setStarredSheets((prev) =>
+        prev.filter((star) => star.sheet._id !== sheetId)
+      );
+
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+
 
 
 
@@ -98,27 +124,52 @@ const Mysheets = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sheets.map((sheet: any) => {
-            const initials = sheet.title.split(" ").slice(0, 2).map((word: string) => word[0]).join("").toUpperCase();
+            const initials = sheet.title
+              .split(" ")
+              .slice(0, 2)
+              .map((word: string) => word[0])
+              .join("")
+              .toUpperCase();
+
             return (
               <div
                 key={sheet._id}
                 onClick={() => router.push(`/sheet/${sheet._id}`)}
-                className="group cursor-pointer rounded-2xl border bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:border-emerald-500/40
-                hover:shadow-lg
-              "
+                className="group cursor-pointer rounded-2xl border bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:border-emerald-500/40 hover:shadow-lg"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-500 font-bold text-lg">
                     {initials}
                   </div>
 
-                
-                  <StarButton 
-                  starredSheets = {starredSheets}
-                  setStarredSheets = {setStarredSheets} 
-                  sheetId = {sheet._id}
-                  ></StarButton>
+                  <div
+                    className="flex items-center gap-1"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <StarButton
+                      starredSheets={starredSheets}
+                      setStarredSheets={setStarredSheets}
+                      sheetId={sheet._id}
+                    />
 
+                    {!deleting && <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground">
+                          <MoreVertical className="h-5 w-5" />
+                        </button>
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          className="text-red-500 focus:text-red-500"
+                          onClick={() => handleDelete(sheet._id)}
+                        >
+                          {deleting ? "Deleting.." : "Delete"}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>}
+                    {deleting && <Spinner></Spinner>}
+                  </div>
                 </div>
 
                 <h3 className="mt-4 truncate text-lg font-semibold">
@@ -136,8 +187,7 @@ const Mysheets = () => {
                       .map((c: any, index: number) => (
                         <div
                           key={index}
-                          className=" flex h-7 w-7 items-center justify-center rounded-full border-2 border-card
-                        bg-emerald-500 text-xs font-semibold text-white"
+                          className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-card bg-emerald-500 text-xs font-semibold text-white"
                         >
                           {c.user?.userName?.[0]?.toUpperCase()}
                         </div>
@@ -156,16 +206,13 @@ const Mysheets = () => {
                     </p>
 
                     <p className="text-sm font-medium">
-                      {formatDistanceToNow(
-                        new Date(sheet.updatedAt),
-                        { addSuffix: true }
-                      )}
+                      {formatDistanceToNow(new Date(sheet.updatedAt), {
+                        addSuffix: true,
+                      })}
                     </p>
                   </div>
 
-                  <span
-                    className=" text-sm font-medium text-emerald-500 opacity-0 transition-opacity group-hover:opacity-100"
-                  >
+                  <span className="text-sm font-medium text-emerald-500 opacity-0 transition-opacity group-hover:opacity-100">
                     Open →
                   </span>
                 </div>

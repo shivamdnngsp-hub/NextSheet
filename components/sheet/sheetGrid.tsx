@@ -34,9 +34,10 @@ type SheetGridProps = {
     >;
  setSaving: React.Dispatch<React.SetStateAction<boolean>>;
    role: "owner" | "editor" | "viewer" | null;
+    undoManagerRef: React.RefObject<Y.UndoManager | null>;
 };
 
-const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role}: SheetGridProps) => {
+const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role,undoManagerRef}: SheetGridProps) => {
   const ROWS = 10;
   const COLS = 10;
   const params = useParams()
@@ -48,15 +49,11 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role}: SheetGri
   const dispatch = useDispatch();
   const activeCell = useSelector((state: any) => state.selection.activeCell)
   const { selectionStart, selectionEnd } = useSelector((state: any) => state.selection);
-  const undoManagerRef = useRef<Y.UndoManager | null>(null);
   const { ydoc, ycells, ystyles, awareness } = getYSheet(sheetId);
   const [loadError, setLoadError] = useState("");
 
 
  
-
-
-
   const handleCopy = async () => {
 
     const [startRow, startCol] = selectionStart.split("-").map(Number);
@@ -159,11 +156,6 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role}: SheetGri
         handleCut()
       }
 
-
-
-
-
-
     }
 
     window.addEventListener("keydown", handleKeyDown)
@@ -174,11 +166,6 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role}: SheetGri
   }, [activeCell, cells, selectionStart, selectionEnd])
 
 
-
-
-  useEffect(() => {
-    undoManagerRef.current = new Y.UndoManager(ycells);
-  }, []);
 
 
   useEffect(() => {

@@ -11,7 +11,8 @@ import api from "@/lib/axios";
 import { socket } from "@/lib/socket";
 import { clearSelection, setActiveCell } from "@/redux/slices/selectionSlice";
 import getYSheet from "@/yjs/ydoc";
-
+import * as Y from "yjs";
+import { useRef } from "react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -41,7 +42,7 @@ const Sheet = () => {
   const sheetId = params.sheetId as string
    const [cells, setCells] = useState<Record<string, string>>({});
    const [styles, setStyles] = useState<Record<string, CellStyle>>({});
-  const {awareness} = getYSheet(sheetId)
+const { awareness, ycells } = getYSheet(sheetId);
  const presentUserExcludingMe = presentUser
  .filter((present:any) =>present?.id?.toString() !== user?.id?.toString())
 .filter((present: any, index: number, arr: any[]) =>index === arr.findIndex((p) => p.id === present.id));
@@ -49,8 +50,22 @@ const [copied,setCopied] = useState<boolean>(false)
   const [saving,setSaving] = useState(false);
 const [title, setTitle] = useState("");
   const [role, setRole] = useState<"owner" | "editor" | "viewer" | null>(null);
+  
+const undoManagerRef = useRef<Y.UndoManager | null>(null);
 
 useEffect(() => {
+  undoManagerRef.current = new Y.UndoManager(ycells);
+
+  return () => {
+    undoManagerRef.current?.destroy();
+  };
+}, [ycells]);
+
+
+
+useEffect(() => {
+    if (loading) return;
+  if (!user) return;
   const fetchMeta = async () => {
     const res = await api.post("/sheets/fetchSheetInfo", {sheetId});
     setTitle(res.data.title);
@@ -58,7 +73,7 @@ useEffect(() => {
   };
 
   fetchMeta();
-}, [sheetId,user]);
+}, [sheetId,user,loading]);
 
 
 
@@ -170,7 +185,7 @@ return (
       </div>
 
       <div className="overflow-x-auto border-y">
-        <ToolBar styles={styles} role = {role}/>
+        <ToolBar styles={styles} role = {role}  undoManagerRef={undoManagerRef}/>
       </div>
 
    
@@ -202,6 +217,7 @@ return (
         setStyles={setStyles}
         setSaving={setSaving}
         role={role}
+         undoManagerRef={undoManagerRef}
       />
     </div>
   </div>

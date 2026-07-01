@@ -7,8 +7,10 @@ import {
   Bold,
   Italic,
   PaintBucket,
+  Redo2,
   Type,
   Underline,
+  Undo2,
 } from "lucide-react";
 
 import { Button } from "./ui/button";
@@ -21,22 +23,22 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Separator } from "./ui/separator";
-
 import { useSelector } from "react-redux";
 import { useParams } from "next/navigation";
-
 import getYSheet from "@/yjs/ydoc";
 import { styleUpdate } from "@/lib/styles/updateStyles";
 import type { CellStyle } from "@/types/cellStyle";
+import * as Y from "yjs";
 
 type ToolBarProps = {
   styles: Record<string, CellStyle>;
    role: "owner" | "editor" | "viewer" | null;
+   undoManagerRef: React.RefObject<Y.UndoManager | null>;
 };
 
 const fontSizes = [10, 12, 14, 16];
 
-const ToolBar = ({ styles ,role}: ToolBarProps) => {
+const ToolBar = ({ styles,role,undoManagerRef}: ToolBarProps) => {
   const params = useParams();
   const sheetId = params.sheetId as string;
 
@@ -48,14 +50,44 @@ const ToolBar = ({ styles ,role}: ToolBarProps) => {
 
   const currentStyle =activeCell && styles[activeCell] ? styles[activeCell] : {};
 
+  const handleUndo = () => {
+  undoManagerRef.current?.undo();
+};
+
+const handleRedo = () => {
+  undoManagerRef.current?.redo();
+};
+
   return (
   <div
     className={`flex w-full items-center gap-2 overflow-x-auto border-b bg-background px-4 py-3 whitespace-nowrap transition-opacity ${
-      (!activeCell || role == "viewer")? "opacity-50" : "opacity-100"
+      (!activeCell || role == "viewer") ? "opacity-50" : "opacity-100"
     }`}
   >
     <Button
-      disabled={!activeCell || role == "viewer" }
+      disabled={role == "viewer"}
+      size="icon"
+      className="h-9 w-9 shrink-0"
+      variant="outline"
+      onClick={handleUndo}
+    >
+      <Undo2 className="h-4 w-4" />
+    </Button>
+
+    <Button
+      disabled={role == "viewer"}
+      size="icon"
+      className="h-9 w-9 shrink-0"
+      variant="outline"
+      onClick={handleRedo}
+    >
+      <Redo2 className="h-4 w-4" />
+    </Button>
+
+    <Separator orientation="vertical" className="mx-1 h-7" />
+
+    <Button
+      disabled={!activeCell || role == "viewer"}
       size="icon"
       className="h-9 w-9 shrink-0"
       variant={currentStyle.bold ? "default" : "outline"}
@@ -69,7 +101,7 @@ const ToolBar = ({ styles ,role}: ToolBarProps) => {
     </Button>
 
     <Button
-      disabled={!activeCell || role == "viewer" }
+      disabled={!activeCell || role == "viewer"}
       size="icon"
       className="h-9 w-9 shrink-0"
       variant={currentStyle.italic ? "default" : "outline"}
@@ -83,7 +115,7 @@ const ToolBar = ({ styles ,role}: ToolBarProps) => {
     </Button>
 
     <Button
-      disabled={!activeCell || role == "viewer" }
+      disabled={!activeCell || role == "viewer"}
       size="icon"
       className="h-9 w-9 shrink-0"
       variant={currentStyle.underline ? "default" : "outline"}
@@ -99,7 +131,7 @@ const ToolBar = ({ styles ,role}: ToolBarProps) => {
     <Separator orientation="vertical" className="mx-1 h-7" />
 
     <Select
-      disabled={!activeCell || role == "viewer" }
+      disabled={!activeCell || role == "viewer"}
       value={String(currentStyle.fontSize ?? 14)}
       onValueChange={(value) =>
         styleUpdate(ystyles, activeCell!, {
@@ -126,7 +158,7 @@ const ToolBar = ({ styles ,role}: ToolBarProps) => {
       <Type className="h-4 w-4" />
 
       <Input
-        disabled={!activeCell || role == "viewer" }
+        disabled={!activeCell || role == "viewer"}
         type="color"
         className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0"
         value={currentStyle.textColor ?? "#000000"}
@@ -142,7 +174,7 @@ const ToolBar = ({ styles ,role}: ToolBarProps) => {
       <PaintBucket className="h-4 w-4" />
 
       <Input
-        disabled={!activeCell || role == "viewer" }
+        disabled={!activeCell || role == "viewer"}
         type="color"
         className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0"
         value={currentStyle.backgroundColor ?? "#ffffff"}
@@ -157,7 +189,7 @@ const ToolBar = ({ styles ,role}: ToolBarProps) => {
     <Separator orientation="vertical" className="mx-1 h-7" />
 
     <Button
-      disabled={!activeCell || role == "viewer" }
+      disabled={!activeCell || role == "viewer"}
       size="icon"
       className="h-9 w-9 shrink-0"
       variant={currentStyle.textAlign === "left" ? "default" : "outline"}
@@ -171,7 +203,7 @@ const ToolBar = ({ styles ,role}: ToolBarProps) => {
     </Button>
 
     <Button
-      disabled={!activeCell || role == "viewer" }
+      disabled={!activeCell || role == "viewer"}
       size="icon"
       className="h-9 w-9 shrink-0"
       variant={currentStyle.textAlign === "center" ? "default" : "outline"}
@@ -185,7 +217,7 @@ const ToolBar = ({ styles ,role}: ToolBarProps) => {
     </Button>
 
     <Button
-      disabled={!activeCell || role == "viewer" }
+      disabled={!activeCell || role == "viewer"}
       size="icon"
       className="h-9 w-9 shrink-0"
       variant={currentStyle.textAlign === "right" ? "default" : "outline"}
