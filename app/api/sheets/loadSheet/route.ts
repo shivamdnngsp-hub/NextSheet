@@ -27,10 +27,15 @@ export const POST = async (req: NextRequest) => {
 
         const isOwner = sheet.owner.toString() === userId.toString();
         const isColaborator = sheet.collaborators.some((c: any) => c.user.toString() === userId.toString())
+
+      
         if(!isOwner && !isColaborator){
-            sheet.collaborators.push({ user: userId, role: sheet.defaultCollaboratorRole});
-            await sheet.save();
+            return NextResponse.json(
+            { message: "Access Denied"},
+            { status: 404 }
+        )
         }
+      
 
         const role = isOwner ? "owner" : sheet.collaborators.find( (c: any) => c.user.toString() === userId.toString())?.role;
     

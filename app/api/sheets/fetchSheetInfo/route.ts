@@ -15,7 +15,7 @@ export const POST = async (req: NextRequest) => {
     const { sheetId } = await req.json();
 
     const sheet = await Sheet.findById(sheetId)
-      .select("title owner collaborators defaultCollaboratorRole");
+      .select("title owner collaborators defaultCollaboratorRole").populate("collaborators.user");
 
     if (!sheet) {
       return NextResponse.json(
@@ -26,25 +26,29 @@ export const POST = async (req: NextRequest) => {
 
     const isOwner = sheet.owner.toString() === userId.toString();
 
-    const collaborator = sheet.collaborators.find(
-      (c: any) => c.user.toString() === userId.toString()
-    );
+   const isCollaborator = sheet.collaborators.find(
+  (c: any) => c.user._id.toString() === userId
+);
   
 
-    if (!isOwner && !collaborator) {
-      sheet.collaborators.push({
-        user: userId,
-       role: sheet.defaultCollaboratorRole
-      });
-      await sheet.save();
-    }
+   if(!isOwner && !isCollaborator){
+            return NextResponse.json(
+            { message: "Access Denied"},
+            { status: 404 }
+        )
+        }
+      
 
-    const role = isOwner ? "owner": sheet.collaborators.find((c: any) => c.user.toString() === userId.toString())?.role;
+const role = isOwner? "owner": sheet.collaborators.find( (c: any) => c.user._id.toString() === userId )?.role;
   
-    return NextResponse.json(
-      {title: sheet.title,role,},
-      { status: 200 }
-    );
+   return NextResponse.json(
+  {
+    title: sheet.title,
+    role,
+    collaborators: sheet.collaborators,
+  },
+  { status: 200 }
+);
   } catch (error) {
     console.error(error);
 
