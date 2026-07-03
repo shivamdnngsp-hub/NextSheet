@@ -6,6 +6,7 @@ import { Spinner } from "./ui/spinner";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import StarButton from "./starButton";
+import useAuth from "@/hooks/useAuth";
 
 
 type Sheet = {
@@ -29,6 +30,7 @@ const CollabSheets = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter()
   const [starredSheets, setStarredSheets] = useState<StarredSheet[]>([]);
+   const {user} = useAuth();
   
 
   useEffect(() => {
@@ -52,7 +54,7 @@ const CollabSheets = () => {
     };
 
     fetchSheets();
-  }, []);
+  }, [user]);
 
 
   return (
