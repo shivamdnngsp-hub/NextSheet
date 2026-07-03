@@ -9,6 +9,7 @@ import { Star } from "lucide-react";
 import StarButton from "./starButton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu";
 import { MoreVertical } from "lucide-react";
+import useAuth from "@/hooks/useAuth";
 
 type Sheet = {
   _id: string;
@@ -32,6 +33,7 @@ const Mysheets = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter()
   const [deleting, setDeleting] = useState(false);
+  const {user} = useAuth();
 
   useEffect(() => {
     const fetchSheets = async () => {
@@ -53,7 +55,7 @@ const Mysheets = () => {
     };
 
     fetchSheets();
-  }, []);
+  }, [user]);
 
 
   const handleDelete = async (sheetId: any) => {
