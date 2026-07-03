@@ -2,6 +2,7 @@ import { connectDB } from "@/lib/Mdb";
 import { protect } from "@/lib/protect";
 import Starred from "@/models/Starred";
 import { NextRequest, NextResponse } from "next/server";
+import Sheet from "@/models/Sheet"
 
 
 export const GET = async (req: NextRequest) => {

@@ -2,6 +2,8 @@ import { connectDB } from "@/lib/Mdb";
 import { protect } from "@/lib/protect";
 import Sheet from "@/models/Sheet";
 import { NextRequest, NextResponse } from "next/server";
+import User from "@/models/User";
+
 
 export const POST = async (req: NextRequest) => {
   try {
