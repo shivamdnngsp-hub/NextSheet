@@ -196,6 +196,7 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role,undoManage
       try {
         setLoading(true)
         const res = await api.post(`/sheets/loadSheet`, { sheetId });
+          setLoadError("");
         isHydrating.current = true;
         const binary = res.data.sheet.yjsState?.data;
         console.log("sheet", sheetId);
@@ -213,10 +214,11 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role,undoManage
         setStyles(Object.fromEntries(ystyles.entries()) as Record<string, CellStyle>);
 
       } catch (error: any) {
-        if (error.response?.status === 404) {
+        if (error.response?.status === 404 || error.response?.status === 403) {
           setLoadError("You are not authorized to access this sheet.");
         } else {
           setLoadError("Failed to load sheet.");
+
         }
       } finally {
         setLoading(false);
@@ -224,8 +226,10 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role,undoManage
       }
 
     };
+    socket.on("collaboration-update", fetchSheet);
     fetchSheet();
-  }, [sheetId]);
+    return () => {socket.off("collaboration-update", fetchSheet);}
+  }, [sheetId,user]);
 
 
   useEffect(() => {

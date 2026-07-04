@@ -87,11 +87,17 @@ const Sheet = () => {
         setCollaborators(res.data.collaborators);
       } catch (error) {
         console.log(error)
+        setAutorized(false);
+      setRole(null);
+      setCollaborators([]);
+
       }
 
     };
-
+    
+    socket.on("collaboration-update", fetchMeta);
     fetchMeta();
+    return () => {socket.off("collaboration-update", fetchMeta)}
   }, [sheetId, user, loading]);
 
 

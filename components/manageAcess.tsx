@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { SetStateAction, useState } from "react";
 import api from "@/lib/axios";
 import { Spinner } from "./ui/spinner";
+import { socket } from "@/lib/socket";
 
 type Collaborator = {
   user: {
@@ -52,6 +53,8 @@ const ManageAccess = ({ authorized, sheetId, collaborators, role }: ManageAccess
     try {
       setInviting(true);
       const res = await api.post("/sheets/invite", { sheetId, invitedEmail })
+      socket.emit("collaboration-update", sheetId);
+      setInvitedEmail("")
     } catch (error: any) {
       setError(
         error?.response?.data?.message
@@ -65,6 +68,7 @@ const ManageAccess = ({ authorized, sheetId, collaborators, role }: ManageAccess
     try {
       const res = await api.post("/sheets/changeRole", { collaboratorId, sheetId, newRole })
       console.log(res.data)
+      socket.emit("collaboration-update", sheetId);
 
     } catch (err) {
       console.error(err);
@@ -80,6 +84,7 @@ const ManageAccess = ({ authorized, sheetId, collaborators, role }: ManageAccess
       setDeleting(true)
       const res = await api.post("/sheets/removeCollaborator", { sheetId, collaboratorId, });
       console.log(res.data)
+      socket.emit("collaboration-update", sheetId);
     } catch (error) {
       console.error(error);
     } finally {

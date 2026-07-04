@@ -65,6 +65,14 @@ socket.on("awareness-update", (update, sheetId) => {
   socket.to(sheetId).emit("awareness-update",update );
 });
 
+socket.on("collaboration-update", (sheetId) => {
+   console.log("Collaboration updated:", sheetId);
+   io.to(sheetId).emit("collaboration-update");
+});
+
+
+
+
 socket.on("disconnect", () => {
   const clientId = socketClientMap.get(socket.id);
   const sheetId = socketSheetMap.get(socket.id);

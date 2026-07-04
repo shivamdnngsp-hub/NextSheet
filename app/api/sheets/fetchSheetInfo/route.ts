@@ -22,7 +22,7 @@ export const POST = async (req: NextRequest) => {
     if (!sheet) {
       return NextResponse.json(
         { message: "Sheet not found" },
-        { status: 404 }
+        { status: 403 }
       );
     }
 
@@ -36,7 +36,7 @@ export const POST = async (req: NextRequest) => {
    if(!isOwner && !isCollaborator){
             return NextResponse.json(
             { message: "Access Denied"},
-            { status: 404 }
+            { status: 403 }
         )
         }
       
