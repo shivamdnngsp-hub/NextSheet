@@ -22,14 +22,14 @@ const SelectionOverlay = ()=>{
   const cellHeight = 48;
 
   const left = 48 + minCol * cellWidth;
-  const top = 48 + minRow * cellHeight;
+  const top = minRow * cellHeight;
 
   const width = (maxCol - minCol + 1) * cellWidth;
   const height = (maxRow - minRow + 1) * cellHeight;
 
   return (
     <div
-      className="absolute border-2 border-blue-500 pointer-events-none"
+      className="absolute border-2  z-10 border-blue-500 pointer-events-none"
       style={{
         left,
         top,

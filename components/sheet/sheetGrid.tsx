@@ -19,8 +19,8 @@ import getYSheet from "@/yjs/ydoc";
 import { setActiveCell, setEditingCell, setSelectionEnd, setSelectionStart } from "@/redux/slices/selectionSlice";
 import { evaluateFormula, getCellValue, getReferences, isFormula } from "@/lib/formula/formulaEngine";
 import { dependencyGraph } from "@/lib/formula/dependencyGraph";
-import { Button } from "../ui/button";
 import type { CellStyle } from "@/types/cellStyle";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 
 
@@ -28,18 +28,18 @@ type SheetGridProps = {
   cells: Record<string, string>;
   setCells: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 
- styles: Record<string, CellStyle>;
-    setStyles: React.Dispatch<
-        React.SetStateAction<Record<string, CellStyle>>
-    >;
- setSaving: React.Dispatch<React.SetStateAction<boolean>>;
-   role: "owner" | "editor" | "viewer" | null;
-    undoManagerRef: React.RefObject<Y.UndoManager | null>;
+  styles: Record<string, CellStyle>;
+  setStyles: React.Dispatch<
+    React.SetStateAction<Record<string, CellStyle>>
+  >;
+  setSaving: React.Dispatch<React.SetStateAction<boolean>>;
+  role: "owner" | "editor" | "viewer" | null;
+  undoManagerRef: React.RefObject<Y.UndoManager | null>;
 };
 
-const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role,undoManagerRef}: SheetGridProps) => {
-  const ROWS = 10;
-  const COLS = 10;
+const SheetGrid = ({ cells, setCells, styles, setStyles, setSaving, role, undoManagerRef }: SheetGridProps) => {
+  const ROWS = 1000;
+  const COLS = 26;
   const params = useParams()
   const sheetId = params.sheetId as string
   const [loading, setLoading] = useState(true);
@@ -53,7 +53,19 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role,undoManage
   const [loadError, setLoadError] = useState("");
 
 
- 
+
+  const ROW_HEIGHT = 48;
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: ROWS,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 5,
+  });
+
+
+
   const handleCopy = async () => {
 
     const [startRow, startCol] = selectionStart.split("-").map(Number);
@@ -196,7 +208,7 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role,undoManage
       try {
         setLoading(true)
         const res = await api.post(`/sheets/loadSheet`, { sheetId });
-          setLoadError("");
+        setLoadError("");
         isHydrating.current = true;
         const binary = res.data.sheet.yjsState?.data;
         console.log("sheet", sheetId);
@@ -228,8 +240,8 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role,undoManage
     };
     socket.on("collaboration-update", fetchSheet);
     fetchSheet();
-    return () => {socket.off("collaboration-update", fetchSheet);}
-  }, [sheetId,user]);
+    return () => { socket.off("collaboration-update", fetchSheet); }
+  }, [sheetId, user]);
 
 
   useEffect(() => {
@@ -247,27 +259,27 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role,undoManage
 
 
 
- useEffect(() => {
-   if (loading) return;
-  if (!role || role === "viewer") return;
+  useEffect(() => {
+    if (loading) return;
+    if (!role || role === "viewer") return;
 
-  setSaving(true);
+    setSaving(true);
 
-  const timer = setTimeout(async () => {
-    try {
-      const update = Y.encodeStateAsUpdate(ydoc);
+    const timer = setTimeout(async () => {
+      try {
+        const update = Y.encodeStateAsUpdate(ydoc);
 
-      await api.post("/sheets/saveSheet", {
-        update: Array.from(update),
-        sheetId,
-      });
-    } finally {
-      setSaving(false);
-    }
-  }, 1000);
+        await api.post("/sheets/saveSheet", {
+          update: Array.from(update),
+          sheetId,
+        });
+      } finally {
+        setSaving(false);
+      }
+    }, 1000);
 
-  return () => clearTimeout(timer);
-}, [cells,role]);
+    return () => clearTimeout(timer);
+  }, [cells, role]);
 
 
 
@@ -599,7 +611,9 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role,undoManage
 
   const editingCell = useSelector(
     (state: any) => state.selection.editingCell
-  ); useEffect(() => {
+  );
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!activeCell) return;
 
@@ -677,6 +691,33 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role,undoManage
         }
       }
 
+      if (newRow !== row) {
+        rowVirtualizer.scrollToIndex(newRow, {
+          align: "center",
+        });
+      }
+
+      if (newCol !== col && scrollRef.current) {
+        const CELL_WIDTH = 80;
+        const ROW_HEADER_WIDTH = 48;
+
+        const cellLeft = ROW_HEADER_WIDTH + newCol * CELL_WIDTH;
+        const cellRight = cellLeft + CELL_WIDTH;
+
+        const visibleLeft = scrollRef.current.scrollLeft;
+        const visibleRight =
+          visibleLeft + scrollRef.current.clientWidth;
+
+        if (cellRight > visibleRight) {
+          scrollRef.current.scrollLeft =
+            cellRight - scrollRef.current.clientWidth;
+        }
+
+        if (cellLeft < visibleLeft) {
+          scrollRef.current.scrollLeft = cellLeft;
+        }
+      }
+
       const newCellId = `${newRow}-${newCol}`;
 
       dispatch(setActiveCell(newCellId));
@@ -689,7 +730,7 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role,undoManage
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [activeCell, editingCell, dispatch, role]);
+  }, [activeCell, editingCell, dispatch, role, rowVirtualizer]);
 
 
 
@@ -720,10 +761,10 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role,undoManage
 
 
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="w-full overflow-auto h-[75vh]" ref={scrollRef}>
       <div className="relative inline-block min-w-max">
 
-        <SelectionOverlay></SelectionOverlay>
+
 
         <div className="flex">
           <div className="h-12 w-12 border" />
@@ -738,35 +779,53 @@ const SheetGrid = ({ cells, setCells ,styles,setStyles,setSaving,role,undoManage
           ))}
         </div>
 
-        {Array.from({ length: ROWS }).map((_, row) => (
-          <div key={row} className="flex">
-            <div className="h-12 w-12 border flex items-center justify-center font-bold">
-              {row + 1}
-            </div>
+        <div
+          className="relative"
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+          }}
+        >
+          <SelectionOverlay></SelectionOverlay>
 
-            {Array.from({ length: COLS }).map((_, col) => {
-              const cellId = `${row}-${col}`;
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const row = virtualRow.index;
+            return (
+              <div key={virtualRow.key} className="absolute left-0 flex"
+                style={{
+                  height: `${virtualRow.size}px`,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <div className="h-12 w-12 border flex items-center justify-center font-bold">
+                  {row + 1}
+                </div>
 
-              const value = cells[cellId] || "";
-              const displayValue = isFormula(value) ? evaluateFormula(value, cells) : value;
+                {Array.from({ length: COLS }).map((_, col) => {
+                  const cellId = `${row}-${col}`;
 
-              return (
-                <Cell
-                  key={cellId}
-                  value={value}
-                  style={styles[cellId]}
-                  displayValue={displayValue}
-                  row={row}
-                  col={col}
-                  handleChange={handleChange}
-                  isSelectingRef={isSelectingRef}
-                  inputRefs={inputRefs}
-                  role={role}
-                />
-              );
-            })}
-          </div>
-        ))}
+                  const value = cells[cellId] || "";
+                  const displayValue = isFormula(value) ? evaluateFormula(value, cells) : value;
+
+                  return (
+                    <Cell
+                      key={cellId}
+                      value={value}
+                      style={styles[cellId]}
+                      displayValue={displayValue}
+                      row={row}
+                      col={col}
+                      handleChange={handleChange}
+                      isSelectingRef={isSelectingRef}
+                      inputRefs={inputRefs}
+                      role={role}
+                    />
+                  );
+                })}
+              </div>
+            )
+          }
+          )}
+        </div>
 
       </div>
     </div>
