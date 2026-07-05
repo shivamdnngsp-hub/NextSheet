@@ -71,8 +71,6 @@ socket.on("collaboration-update", (sheetId) => {
 });
 
 
-
-
 socket.on("disconnect", () => {
   const clientId = socketClientMap.get(socket.id);
   const sheetId = socketSheetMap.get(socket.id);

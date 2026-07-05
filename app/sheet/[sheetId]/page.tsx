@@ -113,12 +113,6 @@ const Sheet = () => {
 
 
 
-
-  useEffect(() => {
-    console.log("here", presentUser)
-  }, [presentUser])
-
-
   if (loading || !user) {
     return (
       <Spinner></Spinner>

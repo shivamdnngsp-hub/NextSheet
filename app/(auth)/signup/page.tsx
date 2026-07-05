@@ -57,7 +57,6 @@ const  Signup = ()=> {
     try {
       setServerError("");
       const res = await api.post("/auth/signup", data);
-      console.log(res.data);
        setUser(res.data.user)
       router.replace("/");
     } catch (error: any) {

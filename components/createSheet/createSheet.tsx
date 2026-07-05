@@ -31,7 +31,6 @@ const CreateSheet = () => {
       }
 
       const res = await api.post("/sheets/create", { title, defaultCollaboratorRole: defaultRole});
-      console.log(res.data.sheet);
       setOpen(false)
       router.push(`/sheet/${res.data.sheet.sheetId}`)
     } catch (error: any) {

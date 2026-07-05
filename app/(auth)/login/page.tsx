@@ -57,8 +57,6 @@ useEffect(() => {
     try {
       setServerError("");
       const res = await api.post("/auth/login", data);
-
-      console.log(res.data);
       setUser(res.data.user)
       router.replace("/")
 

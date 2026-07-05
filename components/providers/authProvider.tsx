@@ -13,7 +13,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             try {
                 setLoading(true)
                 const res = await api.get("/auth/me");
-                console.log(res.data)
                 setUser(res.data.user)
             } catch (error) {
                 setUser(null)

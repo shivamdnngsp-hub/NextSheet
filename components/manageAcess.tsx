@@ -67,7 +67,6 @@ const ManageAccess = ({ authorized, sheetId, collaborators, role }: ManageAccess
   const changeRole = async (collaboratorId: string, newRole: "editor" | "viewer") => {
     try {
       const res = await api.post("/sheets/changeRole", { collaboratorId, sheetId, newRole })
-      console.log(res.data)
       socket.emit("collaboration-update", sheetId);
 
     } catch (err) {
@@ -83,7 +82,6 @@ const ManageAccess = ({ authorized, sheetId, collaborators, role }: ManageAccess
     try {
       setDeleting(true)
       const res = await api.post("/sheets/removeCollaborator", { sheetId, collaboratorId, });
-      console.log(res.data)
       socket.emit("collaboration-update", sheetId);
     } catch (error) {
       console.error(error);

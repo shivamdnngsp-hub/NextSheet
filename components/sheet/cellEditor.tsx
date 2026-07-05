@@ -21,7 +21,6 @@ type CellProps = {
 
 const CellEditor = React.memo(({ value, row, col, handleChange, inputRefs, role, cellStyle }: CellProps) => {
 
-  console.log("cell rendered", row, col);
 
   const dispatch = useDispatch()
 
@@ -41,7 +40,6 @@ const CellEditor = React.memo(({ value, row, col, handleChange, inputRefs, role,
   }
   const viewer = role === "viewer";
 
-  console.log("ineditor")
   return (
     <Input
       data-cell-id={cellId}
@@ -51,7 +49,6 @@ const CellEditor = React.memo(({ value, row, col, handleChange, inputRefs, role,
       }}
       value={value}
       onChange={(e) => {
-        console.log("change", e.target.value);
         handleChange(row, col, e.target.value);
       }}
       onClick={handleClick}

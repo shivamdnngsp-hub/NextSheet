@@ -211,15 +211,13 @@ const SheetGrid = ({ cells, setCells, styles, setStyles, setSaving, role, undoMa
         setLoadError("");
         isHydrating.current = true;
         const binary = res.data.sheet.yjsState?.data;
-        console.log("sheet", sheetId);
-        console.log("binary length", binary?.length);
-        console.log("before hydrate", ycells.size);
+        
 
         if (binary?.length) {
           Y.applyUpdate(ydoc, new Uint8Array(binary), "remote");
         }
 
-        console.log("after hydrate", ycells.size);
+  
 
 
         setCells(Object.fromEntries(ycells.entries()));
@@ -299,7 +297,7 @@ const SheetGrid = ({ cells, setCells, styles, setStyles, setSaving, role, undoMa
 
         dependencyGraph.get(ref)?.add(currentCell)
       }
-      console.log(dependencyGraph)
+    
 
     }
 

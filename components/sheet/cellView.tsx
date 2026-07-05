@@ -65,7 +65,7 @@ const CellView = React.memo(({ value, row, col, isSelectingRef, role, cellStyle 
   };
 
 
-  console.log("inCellView")
+
 
   return (
     <div

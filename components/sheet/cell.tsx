@@ -23,7 +23,7 @@ role: "owner" | "editor" | "viewer" | null;
 
 const Cell = React.memo(({ value, row, col, handleChange, isSelectingRef, inputRefs,displayValue,role,style}: CellProps) => {
 
-  console.log("cell rendered", row, col);
+
 
   const cellId = `${row}-${col}`;
 
