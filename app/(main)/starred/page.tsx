@@ -26,12 +26,14 @@ const Starred = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-  const { user } = useAuth();
+  const { user,authLoading } = useAuth();
 
   useEffect(() => {
+    if(authLoading || !user) return;
     const fetchSheets = async () => {
       try {
         setLoading(true);
+        setError("")
 
         const res = await api.get("sheets/fetchStarred")
 

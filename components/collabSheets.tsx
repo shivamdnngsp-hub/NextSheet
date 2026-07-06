@@ -30,13 +30,15 @@ const CollabSheets = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter()
   const [starredSheets, setStarredSheets] = useState<StarredSheet[]>([]);
-   const {user} = useAuth();
+   const {user,authLoading} = useAuth();
   
 
   useEffect(() => {
+    if(authLoading || !user) return;
     const fetchSheets = async () => {
       try {
         setLoading(true)
+        setError("")
         const [colabRes, starredRes] = await Promise.all([
           api.get("/sheets/fetchCollabsheets"),
           api.get("sheets/fetchStarred")

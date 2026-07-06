@@ -33,12 +33,14 @@ const Mysheets = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter()
   const [deleting, setDeleting] = useState(false);
-  const {user} = useAuth();
+  const {user,authLoading} = useAuth();
 
   useEffect(() => {
+    if(authLoading || !user) return;
     const fetchSheets = async () => {
       try {
         setLoading(true)
+        setError("")
         const [sheetRes, starredSheetRes] = await Promise.all([
           api.get("/sheets/fetchmysheets"),
           api.get("sheets/fetchStarred")
